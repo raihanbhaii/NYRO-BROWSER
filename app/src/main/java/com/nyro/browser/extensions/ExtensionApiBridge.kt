@@ -1,6 +1,5 @@
 package com.nyro.browser.extensions
 
-import com.nyro.browser.utils.Logger
 import android.webkit.WebView
 import com.google.gson.Gson
 import com.google.gson.JsonObject
@@ -32,46 +31,37 @@ class ExtensionApiBridge @Inject constructor() {
     
     private fun handleTabsQuery(callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling tabs.query")
-        // Implementation
     }
     
     private fun handleTabsCreate(params: JsonObject, callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling tabs.create")
-        // Implementation
     }
     
     private fun handleTabsUpdate(params: JsonObject, callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling tabs.update")
-        // Implementation
     }
     
     private fun handleTabsRemove(params: JsonObject, callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling tabs.remove")
-        // Implementation
     }
     
     private fun handleRuntimeSendMessage(params: JsonObject, callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling runtime.sendMessage")
-        // Implementation
     }
     
     private fun handleRuntimeOnMessage(callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling runtime.onMessage")
-        // Implementation
     }
     
     private fun handleStorageGet(params: JsonObject, callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling storage.get")
-        // Implementation
     }
     
     private fun handleStorageSet(params: JsonObject, callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling storage.set")
-        // Implementation
     }
     
     private fun handleWebRequest(callbackId: String) {
         Logger.d("ExtensionApiBridge", "Handling webRequest.onBeforeRequest")
-        // Implementation
     }
 }
