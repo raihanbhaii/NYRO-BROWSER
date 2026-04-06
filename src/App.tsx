@@ -7,7 +7,6 @@ import {
   createEffect,
   For,
   Show,
-  onMount,
 } from "solid-js";
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -447,8 +446,6 @@ const App: Component = () => {
       </div>
 
       {/* ── Webview Placeholder ────────────────────────────────────────────── */}
-      {/* In production Tauri, a <webview> tag or Tauri's native WebviewWindow   */}
-      {/* renders here. This placeholder reflects the active tab state.          */}
       <div class="flex-1 bg-white flex flex-col items-center justify-center overflow-hidden relative">
         <Show
           when={activeTab()?.isLoading}
