@@ -31,23 +31,18 @@ class ExtensionManager @Inject constructor(
         return try {
             Logger.d("ExtensionManager", "Installing extension: $extensionId")
             
-            // Download the extension
             val extensionData = chromeWebStoreClient.downloadExtension(extensionId)
             
-            // Save extension files
             val extensionDir = File(extensionsDir, extensionId)
             extensionDir.mkdirs()
             
-            // Save the CRX file
             val crxFile = File(extensionDir, "$extensionId.crx")
             crxFile.writeBytes(extensionData)
             
-            // Parse manifest.json from the CRX (in real implementation, you'd extract it)
             val manifestFile = File(extensionDir, "manifest.json")
             val manifest = if (manifestFile.exists()) {
                 manifestParser.parse(manifestFile)
             } else {
-                // Create a basic manifest for testing
                 createBasicManifest(extensionId, version)
             }
             
@@ -56,14 +51,12 @@ class ExtensionManager @Inject constructor(
                 return false
             }
             
-            // Create extension object
             val extension = Extension(
                 id = extensionId,
                 name = manifest.name,
                 version = manifest.version,
                 manifest = manifest,
                 path = extensionDir,
-                unpackedPath = extensionDir.absolutePath,
                 isEnabled = true,
                 permissionsGranted = manifest.permissions ?: emptyList(),
                 contentScripts = manifest.contentScripts ?: emptyList()
@@ -138,19 +131,11 @@ class ExtensionManager @Inject constructor(
         _enabledExtensions.value = extensions.values.filter { it.isEnabled }
     }
     
-    fun getExtension(extensionId: String): Extension? {
-        return extensions[extensionId]
-    }
+    fun getExtension(extensionId: String): Extension? = extensions[extensionId]
     
-    fun getAllExtensions(): List<Extension> {
-        return extensions.values.toList()
-    }
+    fun getAllExtensions(): List<Extension> = extensions.values.toList()
     
-    fun getEnabledExtensions(): List<Extension> {
-        return extensions.values.filter { it.isEnabled }
-    }
+    fun getEnabledExtensions(): List<Extension> = extensions.values.filter { it.isEnabled }
     
-    fun isExtensionInstalled(extensionId: String): Boolean {
-        return extensions.containsKey(extensionId)
-    }
+    fun isExtensionInstalled(extensionId: String): Boolean = extensions.containsKey(extensionId)
 }
