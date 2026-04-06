@@ -1,58 +1,47 @@
-# Keep Kotlin serialization
--keepattributes *Annotation*,InnerClasses
+# ================== KEEP KOTLIN SERIALIZATION ==================
+-keepattributes *Annotation*,InnerClasses,Signature
 -keepclassmembers class kotlinx.serialization.** { *; }
+-dontwarn kotlinx.serialization.**
 
-# Keep GeckoView classes
+# ================== GECKOVIEW (CRITICAL) ==================
 -keep class org.mozilla.geckoview.** { *; }
+-keepclassmembers class org.mozilla.geckoview.** { *; }
 -dontwarn org.mozilla.geckoview.**
 
-# Keep extension API bridge
--keep class com.nyro.browser.extensions.** { *; }
--keepclassmembers class com.nyro.browser.extensions.** { *; }
+# ================== YOUR APP CLASSES ==================
+-keep class com.nyro.browser.** { *; }
+-keepclassmembers class com.nyro.browser.** { *; }
 
-# Keep models for serialization
+# Keep models used in serialization / extensions
 -keep class com.nyro.browser.extensions.models.** { *; }
 -keepclassmembers class com.nyro.browser.extensions.models.** { *; }
 
-# Keep Hilt components
+# ================== HILT & DEPENDENCY INJECTION ==================
+-keep class dagger.hilt.** { *; }
 -keep class * extends dagger.hilt.android.** { *; }
--keep class * implements javax.inject.** { *; }
 -keep @javax.inject.** class * { *; }
 -dontwarn javax.inject.**
 
-# Keep AndroidX classes
+# ================== OKHTTP & NETWORKING ==================
+-dontwarn okhttp3.**
+-dontwarn okio.**
+-keep class okhttp3.** { *; }
+-keep interface okhttp3.** { *; }
+
+# ================== ANDROIDX & CORE ==================
 -keep class androidx.** { *; }
 -dontwarn androidx.**
 
-# Keep OkHttp/Retrofit
--dontwarn okhttp3.**
--dontwarn okio.**
--dontwarn retrofit2.**
--keep class okhttp3.** { *; }
--keep interface okhttp3.** { *; }
--keep class retrofit2.** { *; }
--keep interface retrofit2.** { *; }
-
-# Keep JSON serialization
--keepattributes Signature
--keepattributes *Annotation*
--dontwarn kotlinx.serialization.**
--keep class kotlinx.serialization.** { *; }
-
-# Keep extension manifest parsing
--keepclassmembers class com.nyro.browser.extensions.ManifestParser { *; }
-
-# Keep native methods
+# ================== NATIVE & PARCELABLE ==================
 -keepclasseswithmembernames class * {
     native <methods>;
 }
 
-# Keep Parcelable implementations
 -keep class * implements android.os.Parcelable {
-  public static final ** CREATOR;
+    public static final ** CREATOR;
 }
 
-# Keep serialization UIDs
+# ================== SERIALIZABLE ==================
 -keepclassmembers class * implements java.io.Serializable {
     static final long serialVersionUID;
     private static final java.io.ObjectStreamField[] serialPersistentFields;
@@ -62,10 +51,11 @@
     java.lang.Object readResolve();
 }
 
-# Remove logging in release
+# ================== REMOVE LOGGING IN RELEASE ==================
 -assumenosideeffects class android.util.Log {
     public static *** d(...);
     public static *** v(...);
     public static *** i(...);
     public static *** w(...);
+    public static *** e(...);
 }
