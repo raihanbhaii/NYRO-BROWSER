@@ -48,10 +48,10 @@ class ExtensionLoader @Inject constructor(
                 manifest = manifest,
                 path = extensionDir,
                 isEnabled = true,
-                permissionsGranted = manifest.permissions ?: emptyList()
+                permissionsGranted = manifest.permissions ?: emptyList(),
+                contentScripts = manifest.contentScripts ?: emptyList()
             )
             
-            // Run background scripts
             backgroundScriptRunner.runBackgroundScripts(manifest, extensionPath)
             
             loadedExtensions[extension.id] = extension
@@ -79,13 +79,9 @@ class ExtensionLoader @Inject constructor(
         }
     }
     
-    fun getLoadedExtension(extensionId: String): Extension? {
-        return loadedExtensions[extensionId]
-    }
+    fun getLoadedExtension(extensionId: String): Extension? = loadedExtensions[extensionId]
     
-    fun getAllLoadedExtensions(): List<Extension> {
-        return loadedExtensions.values.toList()
-    }
+    fun getAllLoadedExtensions(): List<Extension> = loadedExtensions.values.toList()
     
     fun reloadExtension(extensionId: String): Extension? {
         unloadExtension(extensionId)
