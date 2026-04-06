@@ -4,14 +4,6 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "1.9.20" apply false
 }
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-        maven("https://mozilla.github.io/geckoview/maven2")
-    }
-}
-
 tasks.register<Delete>("clean") {
     delete(rootProject.buildDir)
 }
