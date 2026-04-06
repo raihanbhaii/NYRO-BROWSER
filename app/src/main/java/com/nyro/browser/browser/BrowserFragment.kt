@@ -72,14 +72,16 @@ class BrowserFragment : Fragment() {
                 currentUrl = url
             }
             
-            // Fixed: Removed 'success: Boolean' parameter (Signature changed in recent GeckoView)
-            override fun onPageStop(session: GeckoSession) {
-                loading = false
+            // Fixed: Replaced onPageStop with onPageProgress to bypass signature inconsistencies 
+            // across different GeckoView versions. 100 indicates the page stopped loading.
+            override fun onPageProgress(session: GeckoSession, progress: Int) {
+                if (progress == 100) {
+                    loading = false
+                }
             }
         }
 
         geckoSession?.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            // Fixed: Changed 'MutableList' to 'List' to match GeckoView's Java signature
             override fun onLocationChange(
                 session: GeckoSession,
                 url: String?,
@@ -100,7 +102,9 @@ class BrowserFragment : Fragment() {
     }
 
     fun goBack() {
-        geckoSession?.goBack(null)
+        // Fixed: goBack() expects a non-null primitive boolean. 
+        // Passing 'false' satisfies the signature.
+        geckoSession?.goBack(false)
     }
 
     fun canGoBack(): Boolean = currentUrl.isNotEmpty()
