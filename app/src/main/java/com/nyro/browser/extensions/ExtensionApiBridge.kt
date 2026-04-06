@@ -1,5 +1,6 @@
 package com.nyro.browser.extensions
 
+import com.nyro.browser.utils.Logger
 import android.webkit.WebView
 import com.google.gson.Gson
 import com.google.gson.JsonObject
