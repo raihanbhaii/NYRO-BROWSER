@@ -1,9 +1,7 @@
 package com.nyro.browser.utils
 
-import com.nyro.browser.utils.Logger
 import com.google.gson.Gson
 import com.nyro.browser.extensions.models.Manifest
-import com.nyro.browser.utils.Logger
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
