@@ -16,11 +16,9 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // 🔥 ABI filtering to significantly reduce APK size
-        // Focusing on arm64-v8a as most modern devices use this.
+        // ABI filtering to reduce APK size (arm64-v8a is sufficient for most modern devices)
         ndk {
             abiFilters.add("arm64-v8a")
         }
@@ -28,8 +26,8 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = true          // ✅ Enabled for size reduction
-            isShrinkResources = true        // ✅ Removes unused resources
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -49,9 +47,9 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
-    
+
     buildFeatures {
-        buildConfig = true  
+        buildConfig = true
     }
 }
 
@@ -67,24 +65,25 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    
+
     // GeckoView (Browser Engine)
     implementation("org.mozilla.geckoview:geckoview:124.0.20240311145044")
-    
+
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
-    
-    // JSON Serialization (Gson removed to save space)
+
+    // JSON - Using BOTH kotlinx-serialization (already present) + Gson (required by your extension code)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-    
+    implementation("com.google.code.gson:gson:2.11.0")   // ← Added back for ExtensionApiBridge & ManifestParser
+
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    
+
     // Dependency Injection (Hilt)
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-compiler:2.50")
-    
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
