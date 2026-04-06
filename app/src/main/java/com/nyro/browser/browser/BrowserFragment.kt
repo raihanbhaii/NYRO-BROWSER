@@ -71,7 +71,9 @@ class BrowserFragment : Fragment() {
                 loading = true
                 currentUrl = url
             }
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
+
+            // Updated to handle nullable success parameter
+            override fun onPageStop(session: GeckoSession, success: Boolean?) {
                 loading = false
             }
         }
@@ -80,15 +82,17 @@ class BrowserFragment : Fragment() {
             override fun onLocationChange(
                 session: GeckoSession,
                 url: String?,
-                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>
+                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>?
             ) {
                 url?.let { currentUrl = it }
             }
         }
 
-        geckoSession?.open(runtime!!)
-        geckoView?.setSession(geckoSession!!)
-        geckoSession?.loadUri("https://www.google.com")
+        runtime?.let {
+            geckoSession?.open(it)
+            geckoView?.setSession(geckoSession!!)
+            geckoSession?.loadUri("https://www.google.com")
+        }
     }
 
     fun navigate(url: String) {
@@ -97,7 +101,7 @@ class BrowserFragment : Fragment() {
     }
 
     fun goBack() {
-        geckoSession?.goBack(null)
+        geckoSession?.goBack()
     }
 
     fun canGoBack(): Boolean = currentUrl.isNotEmpty()
