@@ -7,8 +7,6 @@ on:
 
 env:
   JAVA_VERSION: '17'
-  ANDROID_API_LEVEL: 34
-  BUILD_TOOLS_VERSION: '34.0.0'
 
 jobs:
   build:
@@ -17,7 +15,7 @@ jobs:
       contents: write
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -31,18 +29,14 @@ jobs:
 
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
-
-      - name: Accept Android licenses
-        run: yes | sdkmanager --licenses || true
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x ./gradlew
+        with:
+          accept-android-sdk-licenses: true
 
       - name: Build Debug APK
-        run: ./gradlew assembleDebug --no-daemon
+        run: gradle assembleDebug --no-daemon
 
       - name: Build Release AAB
-        run: ./gradlew bundleRelease --no-daemon
+        run: gradle bundleRelease --no-daemon
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
@@ -58,13 +52,13 @@ jobs:
           path: app/build/outputs/bundle/release/*.aab
           retention-days: 30
 
-      - name: Create GitHub Release
+      - name: Draft Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: "build-${{ github.run_number }}"
-          name: "NyroBrowser Build ${{ github.run_number }}"
-          draft: false
+          name: "NyroBrowser Auto-Build #${{ github.run_number }}"
+          draft: true
           generate_release_notes: true
           files: |
-            app/build/outputs/apk/release/*.apk
+            app/build/outputs/apk/debug/*.apk
             app/build/outputs/bundle/release/*.aab
