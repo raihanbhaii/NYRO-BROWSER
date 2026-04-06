@@ -23,7 +23,7 @@ android {
 
     compileOptions {
         // Required for coreLibraryDesugaring
-        isCoreLibraryDesugaringEnabled = true 
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -44,19 +44,19 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
-    
+
     // GeckoView - using latest stable version with correct repository
-    implementation("org.mozilla.geckoview:geckoview:124.0.20240321154648")
-    
+    implementation("org.mozilla.geckoview:geckoview:124.0.20240311145044") // Using a stable version
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-    
+
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-compiler:2.50")
-    
+
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
-    
+
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
