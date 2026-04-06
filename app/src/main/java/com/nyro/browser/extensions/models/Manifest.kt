@@ -1,7 +1,7 @@
 package com.nyro.browser.extensions.models
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.SerialName
 
 @Serializable
 data class Manifest(
@@ -29,10 +29,6 @@ data class Manifest(
     val key: String? = null,
     val oauth2: Oauth2? = null,
     val optionalPermissions: List<String>? = null
-    // ❌ REMOVED DUPLICATES:
-    // - permissions (already defined above)
-    // - hostPermissions (already defined above)  
-    // - contentSecurityPolicy (already defined above)
 ) {
     @Serializable
     data class Action(
@@ -60,7 +56,6 @@ data class Manifest(
         val resources: List<String>,
         val matches: List<String>? = null,
         val extensionIds: List<String>? = null
-        // ❌ REMOVED duplicate 'matches' property
     )
     
     @Serializable
@@ -98,3 +93,20 @@ data class Manifest(
         val scopes: List<String>
     )
 }
+
+@Serializable
+data class ContentScript(
+    val matches: List<String>? = null,
+    val js: List<String>? = null,
+    val css: List<String>? = null,
+    @SerialName("run_at")
+    val runAt: String? = null,
+    @SerialName("all_frames")
+    val allFrames: Boolean? = null,
+    @SerialName("exclude_matches")
+    val excludeMatches: List<String>? = null,
+    @SerialName("include_globs")
+    val includeGlobs: List<String>? = null,
+    @SerialName("exclude_globs")
+    val excludeGlobs: List<String>? = null
+)
