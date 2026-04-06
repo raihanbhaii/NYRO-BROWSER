@@ -32,6 +32,7 @@ class BrowserFragment : Fragment() {
 
     var currentUrl: String = ""
         private set
+        
     var loading: Boolean = false
         private set
 
@@ -72,7 +73,6 @@ class BrowserFragment : Fragment() {
                 currentUrl = url
             }
             
-            // Fixed: The correct method name is 'onProgressChange'
             override fun onProgressChange(session: GeckoSession, progress: Int) {
                 if (progress == 100) {
                     loading = false
@@ -106,7 +106,8 @@ class BrowserFragment : Fragment() {
 
     fun canGoBack(): Boolean = currentUrl.isNotEmpty()
 
-    fun getCurrentUrl(): String = currentUrl
+    // Removed fun getCurrentUrl() to prevent JVM signature clash 
+    // Other classes can just use `fragment.currentUrl`
 
     fun isLoading(): Boolean = loading
 
