@@ -1,6 +1,5 @@
 package com.nyro.browser.extensions
 
-import com.nyro.browser.utils.Logger
 import android.webkit.WebView
 import com.nyro.browser.extensions.models.Manifest
 import com.nyro.browser.utils.Logger
@@ -25,7 +24,6 @@ class ContentScriptInjector @Inject constructor() {
     
     private fun shouldInjectForUrl(matches: List<String>?, url: String): Boolean {
         if (matches.isNullOrEmpty()) return false
-        
         return matches.any { pattern ->
             when {
                 pattern.contains("*") -> {
@@ -50,7 +48,6 @@ class ContentScriptInjector @Inject constructor() {
                 document.head.appendChild(style);
             })();
         """.trimIndent()
-        
         webView?.evaluateJavascript(jsCode, null)
     }
 }
