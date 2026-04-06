@@ -1,5 +1,6 @@
 package com.nyro.browser.extensions
 
+import com.nyro.browser.utils.Logger
 import android.content.Context
 import com.nyro.browser.extensions.models.Extension
 import com.nyro.browser.utils.Logger
