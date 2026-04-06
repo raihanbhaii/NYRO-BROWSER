@@ -1,0 +1,19 @@
+# Kotlin/Gradle
+build/
+.gradle/
+*.iml
+*.iws
+*.ipr
+.idea/
+
+# Java
+*.class
+*.log
+
+# Local config
+*.local
+.env
+
+# Installer artifacts (downloaded in CI)
+installer/app_icon.ico
+installer/loading_screen.png
