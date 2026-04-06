@@ -1,19 +1,20 @@
 plugins {
     kotlin("jvm") version "1.9.20"
     application
+    id("com.github.johnrengelman.shadow") version "8.1.1" // Fat JAR plugin
 }
 
 group = "com.nyro"
-version = "1.0.0"
+version = System.getenv("GITHUB_RUN_NUMBER") ?: "1.0.0" // Auto-version from CI
 
 repositories {
     mavenCentral()
-    maven("https://maven.pkg.github.com/jitsi/jcef") // JCEF Maven repo
+    maven("https://maven.pkg.github.com/jitsi/jcef")
 }
 
 dependencies {
-    // JCEF for Java/Kotlin
-    implementation("org.jitsi:jcef:119.0.18") 
+    implementation("org.jitsi:jcef:119.0.18")
+    implementation("com.google.code.gson:gson:2.10.1") // For config handling
 }
 
 java {
@@ -23,24 +24,29 @@ java {
 
 application {
     mainClass.set("com.nyro.browser.MainKt")
+    applicationDefaultJvmArgs = listOf(
+        "-Djava.awt.headless=false",
+        "-Dsun.java2d.d3d=true" // Enable Direct3D for better rendering
+    )
 }
 
-tasks.named<Jar>("jar") {
-    manifest {
-        attributes["Main-Class"] = "com.nyro.browser.MainKt"
-    }
-    // Bundle dependencies into the JAR
-    from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) })
-    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+// Create fat JAR with all dependencies
+tasks.shadowJar {
+    archiveBaseName.set("nyro-browser")
+    archiveClassifier.set("")
+    archiveVersion.set("")
+    mergeServiceFiles()
 }
 
-tasks.named<CreateStartScripts>("startScripts") {
-    // This creates the .exe launcher via NSIS, but we need the native libs
-    // For JCEF to work, the native .dll/.so files must be accessible.
-    // We copy them to the install directory.
+// Configure installDist to include JCEF natives
+tasks.installDist {
     doLast {
+        // Copy JCEF native libraries to the lib folder
+        val jcefNatives = configurations.runtimeClasspath.get().files.filter { 
+            it.name.contains("jcef") && it.extension != "jar" 
+        }
         copy {
-            from(configurations.runtimeClasspath.get().files.filter { it.path.contains("jcef") && !it.path.endsWith(".jar") })
+            from(jcefNatives)
             into(layout.buildDirectory.dir("install/NyroBrowser/lib"))
         }
     }
