@@ -40,9 +40,10 @@ android {
     }
     
     buildFeatures {
-        dataBinding = true  // ⚠️ THIS IS CRITICAL
-        viewBinding = true
-        buildConfig = true
+        // ❌ REMOVE these since you don't have XML layouts
+        // dataBinding = true
+        // viewBinding = true
+        buildConfig = true  // ✅ Keep this
     }
 }
 
@@ -70,6 +71,7 @@ dependencies {
     
     // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")  // Add this
     
     // Dependency Injection
     implementation("com.google.dagger:hilt-android:2.50")
