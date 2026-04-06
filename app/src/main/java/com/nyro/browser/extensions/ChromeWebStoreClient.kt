@@ -1,6 +1,5 @@
 package com.nyro.browser.extensions
 
-import com.nyro.browser.utils.Logger
 import android.content.Context
 import com.nyro.browser.BuildConfig
 import com.nyro.browser.utils.Logger
@@ -74,8 +73,6 @@ class ChromeWebStoreClient @Inject constructor(
     suspend fun getExtensionInfo(extensionId: String): ExtensionInfo? {
         return withContext(Dispatchers.IO) {
             try {
-                // Chrome Web Store doesn't have a public API, so we parse the store page
-                // In production, you'd use a proper API or web scraping service
                 Logger.d(TAG, "Getting info for extension: $extensionId")
                 null
             } catch (e: Exception) {
@@ -88,8 +85,6 @@ class ChromeWebStoreClient @Inject constructor(
     suspend fun searchExtensions(query: String, limit: Int = 20): List<ExtensionSearchResult> {
         return withContext(Dispatchers.IO) {
             try {
-                // Chrome Web Store search requires scraping or unofficial API
-                // Return empty list for now - implement with proper API in production
                 Logger.d(TAG, "Searching extensions with query: $query")
                 emptyList()
             } catch (e: Exception) {
@@ -104,12 +99,7 @@ class ChromeWebStoreClient @Inject constructor(
     }
     
     private fun getChromeVersion(): String {
-        // Return a recent Chrome version for compatibility
-        return if (BuildConfig.DEBUG) {
-            "121.0.6167.85"  // Development version
-        } else {
-            "121.0.6167.85"  // Production version
-        }
+        return if (BuildConfig.DEBUG) "121.0.6167.85" else "121.0.6167.85"
     }
     
     data class ExtensionInfo(
