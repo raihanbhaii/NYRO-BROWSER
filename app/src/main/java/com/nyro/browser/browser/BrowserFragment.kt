@@ -4,14 +4,20 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
+import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.nyro.browser.R 
 import com.nyro.browser.extensions.ExtensionManager
+import com.nyro.browser.extensions.models.Extension
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
+import java.io.File
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -35,12 +41,28 @@ class BrowserFragment : Fragment() {
     @Inject
     lateinit var extensionManager: ExtensionManager
     
-    private var _binding: FragmentBrowserBinding? = null
-    private val binding get() = _binding!!
-    
-    private lateinit var geckoView: GeckoView
-    private lateinit var geckoSession: GeckoSession
+    private var geckoView: GeckoView? = null
+    private var geckoSession: GeckoSession? = null
     private var tabId: String? = null
+    
+    // Observable state for UI updates
+    private val _currentUrl = MutableStateFlow("")
+    val currentUrl = _currentUrl.asStateFlow()
+    
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading = _isLoading.asStateFlow()
+    
+    private val _canGoBack = MutableStateFlow(false)
+    val canGoBack = _canGoBack.asStateFlow()
+    
+    private val _canGoForward = MutableStateFlow(false)
+    val canGoForward = _canGoForward.asStateFlow()
+    
+    private val _title = MutableStateFlow("")
+    val title = _title.asStateFlow()
+    
+    private val _isSecure = MutableStateFlow(false)
+    val isSecure = _isSecure.asStateFlow()
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -52,8 +74,26 @@ class BrowserFragment : Fragment() {
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        _binding = FragmentBrowserBinding.inflate(inflater, container, false)
-        return binding.root
+        // Create container
+        val containerView = FrameLayout(requireContext()).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            id = ViewCompat.generateViewId()
+        }
+        
+        // Create GeckoView
+        geckoView = GeckoView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+        }
+        
+        containerView.addView(geckoView)
+        
+        return containerView
     }
     
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -66,8 +106,10 @@ class BrowserFragment : Fragment() {
     }
     
     private fun initializeGeckoView() {
-        geckoView = binding.geckoView
         geckoSession = GeckoSession()
+        
+        // Get or create GeckoRuntime
+        val runtime = GeckoRuntime.create(requireContext())
         
         // Configure session settings
         val settings = GeckoSession.Settings.Builder()
@@ -78,18 +120,19 @@ class BrowserFragment : Fragment() {
             .trackingProtection(GeckoSession.Settings.TrackingProtection.STRICT)
             .build()
         
-        geckoSession.settings = settings
+        geckoSession?.settings = settings
         
         // Attach session to view
-        geckoView.session = geckoSession
+        geckoView?.setSession(geckoSession)
     }
     
     private fun setupSessionDelegates() {
-        geckoSession.progressDelegate = object : GeckoSession.ProgressDelegate {
+        geckoSession?.progressDelegate = object : GeckoSession.ProgressDelegate {
             override fun onLoadingChange(
                 session: GeckoSession,
                 isLoading: Boolean
             ) {
+                _isLoading.value = isLoading
                 tabId?.let { id ->
                     tabManager.updateTabLoading(id, isLoading)
                 }
@@ -100,6 +143,7 @@ class BrowserFragment : Fragment() {
                 url: String?
             ) {
                 url?.let {
+                    _currentUrl.value = it
                     tabId?.let { id ->
                         tabManager.updateTabUrl(id, it)
                     }
@@ -110,18 +154,21 @@ class BrowserFragment : Fragment() {
                 session: GeckoSession,
                 securityInfo: GeckoSession.SecurityInformation
             ) {
+                val isSecure = securityInfo.isSecure
+                _isSecure.value = isSecure
                 tabId?.let { id ->
-                    tabManager.updateTabSecurity(id, securityInfo.isSecure)
+                    tabManager.updateTabSecurity(id, isSecure)
                 }
             }
         }
         
-        geckoSession.contentDelegate = object : GeckoSession.ContentDelegate {
+        geckoSession?.contentDelegate = object : GeckoSession.ContentDelegate {
             override fun onTitleChange(
                 session: GeckoSession,
                 title: String?
             ) {
                 title?.let {
+                    _title.value = it
                     tabId?.let { id ->
                         tabManager.updateTabTitle(id, it)
                     }
@@ -134,11 +181,12 @@ class BrowserFragment : Fragment() {
             }
         }
         
-        geckoSession.navigationDelegate = object : GeckoSession.NavigationDelegate {
+        geckoSession?.navigationDelegate = object : GeckoSession.NavigationDelegate {
             override fun onCanGoBack(
                 session: GeckoSession,
                 canGoBack: Boolean
             ) {
+                _canGoBack.value = canGoBack
                 tabId?.let { id ->
                     tabManager.updateTabNavigation(id, canGoBack, session.canGoForward)
                 }
@@ -148,6 +196,7 @@ class BrowserFragment : Fragment() {
                 session: GeckoSession,
                 canGoForward: Boolean
             ) {
+                _canGoForward.value = canGoForward
                 tabId?.let { id ->
                     tabManager.updateTabNavigation(id, session.canGoBack, canGoForward)
                 }
@@ -159,7 +208,7 @@ class BrowserFragment : Fragment() {
         tabId?.let { id ->
             val tab = tabManager.getTab(id)
             tab?.url?.let { url ->
-                geckoSession.loadUri(url)
+                geckoSession?.loadUri(url)
             }
         }
     }
@@ -167,15 +216,21 @@ class BrowserFragment : Fragment() {
     private fun observeExtensions() {
         viewLifecycleOwner.lifecycleScope.launch {
             extensionManager.enabledExtensions.collect { extensions ->
-                // Inject content scripts for enabled extensions
                 extensions.forEach { extension ->
-                    extension.contentScripts.forEach { script ->
-                        if (script.matches.any { pattern -> geckoSession.currentUri?.matchesHost(pattern) == true }) {
-                            script.js?.forEach { jsFile ->
-                                // Inject content script
-                                geckoSession.evalJs(loadExtensionResource(extension, jsFile))
-                            }
-                        }
+                    injectContentScripts(extension)
+                }
+            }
+        }
+    }
+    
+    private fun injectContentScripts(extension: Extension) {
+        extension.contentScripts.forEach { script ->
+            val currentUri = geckoSession?.currentUri ?: return
+            if (script.matches.any { pattern -> currentUri.toString().matches(pattern.toRegex()) }) {
+                script.js?.forEach { jsFile ->
+                    val scriptContent = loadExtensionResource(extension, jsFile)
+                    if (scriptContent.isNotEmpty()) {
+                        geckoSession?.evaluateJS(scriptContent)
                     }
                 }
             }
@@ -183,50 +238,58 @@ class BrowserFragment : Fragment() {
     }
     
     private fun loadExtensionResource(extension: Extension, path: String): String {
-        // Load JavaScript file from extension directory
         return try {
-            extension.unpackedPath?.let { basePath ->
-                val file = java.io.File(basePath, path)
-                if (file.exists()) file.readText() else ""
-            } ?: ""
+            val file = File(extension.unpackedPath ?: return "", path)
+            if (file.exists()) file.readText() else ""
         } catch (e: Exception) {
             ""
         }
     }
     
     fun navigate(url: String) {
-        geckoSession.loadUri(url)
+        geckoSession?.loadUri(url)
     }
     
     fun goBack() {
-        geckoSession.goBack()
+        geckoSession?.goBack()
     }
     
     fun goForward() {
-        geckoSession.goForward()
+        geckoSession?.goForward()
     }
     
     fun reload() {
-        geckoSession.reload()
+        geckoSession?.reload()
     }
     
     fun stop() {
-        geckoSession.stop()
+        geckoSession?.stop()
     }
+    
+    fun getCurrentUrl(): String = _currentUrl.value
+    
+    fun isLoading(): Boolean = _isLoading.value
+    
+    fun canGoBack(): Boolean = _canGoBack.value
+    
+    fun canGoForward(): Boolean = _canGoForward.value
     
     override fun onResume() {
         super.onResume()
-        geckoView.onResume()
+        geckoView?.onResume()
+        geckoSession?.open()
     }
     
     override fun onPause() {
         super.onPause()
-        geckoView.onPause()
+        geckoView?.onPause()
     }
     
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding = null
-        geckoSession.close()
+        geckoSession?.close()
+        geckoView?.setSession(null)
+        geckoView = null
+        geckoSession = null
     }
 }
