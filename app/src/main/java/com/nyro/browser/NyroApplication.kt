@@ -20,11 +20,10 @@ class NyroApplication : Application() {
 
     private fun initializeGeckoRuntime() {
         val settings = GeckoRuntimeSettings.Builder()
-            .consoleOutputEnabled(BuildConfig.DEBUG)
-            .crashReporterEnabled(true)
-            .aboutConfigEnabled(BuildConfig.DEBUG)
-            .webExtensionsEnabled(BuildConfig.ENABLE_WEB_EXTENSIONS)
-            .remoteDebuggingEnabled(BuildConfig.DEBUG)
+            .consoleOutput(BuildConfig.DEBUG)
+            .crashReporter(true)
+            .aboutConfig(BuildConfig.DEBUG)
+            .remoteDebugging(BuildConfig.DEBUG)
             .build()
             
         runtime = GeckoRuntime.create(this, settings)
