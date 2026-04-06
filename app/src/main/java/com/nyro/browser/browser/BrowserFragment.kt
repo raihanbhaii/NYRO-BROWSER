@@ -72,9 +72,8 @@ class BrowserFragment : Fragment() {
                 currentUrl = url
             }
             
-            // Fixed: Replaced onPageStop with onPageProgress to bypass signature inconsistencies 
-            // across different GeckoView versions. 100 indicates the page stopped loading.
-            override fun onPageProgress(session: GeckoSession, progress: Int) {
+            // Fixed: The correct method name is 'onProgressChange'
+            override fun onProgressChange(session: GeckoSession, progress: Int) {
                 if (progress == 100) {
                     loading = false
                 }
@@ -102,8 +101,6 @@ class BrowserFragment : Fragment() {
     }
 
     fun goBack() {
-        // Fixed: goBack() expects a non-null primitive boolean. 
-        // Passing 'false' satisfies the signature.
         geckoSession?.goBack(false)
     }
 
