@@ -71,28 +71,27 @@ class BrowserFragment : Fragment() {
                 loading = true
                 currentUrl = url
             }
-
-            // Updated to handle nullable success parameter
-            override fun onPageStop(session: GeckoSession, success: Boolean?) {
+            
+            // Fixed: Removed 'success: Boolean' parameter (Signature changed in recent GeckoView)
+            override fun onPageStop(session: GeckoSession) {
                 loading = false
             }
         }
 
         geckoSession?.navigationDelegate = object : GeckoSession.NavigationDelegate {
+            // Fixed: Changed 'MutableList' to 'List' to match GeckoView's Java signature
             override fun onLocationChange(
                 session: GeckoSession,
                 url: String?,
-                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>?
+                perms: List<GeckoSession.PermissionDelegate.ContentPermission>
             ) {
                 url?.let { currentUrl = it }
             }
         }
 
-        runtime?.let {
-            geckoSession?.open(it)
-            geckoView?.setSession(geckoSession!!)
-            geckoSession?.loadUri("https://www.google.com")
-        }
+        geckoSession?.open(runtime!!)
+        geckoView?.setSession(geckoSession!!)
+        geckoSession?.loadUri("https://www.google.com")
     }
 
     fun navigate(url: String) {
@@ -101,7 +100,7 @@ class BrowserFragment : Fragment() {
     }
 
     fun goBack() {
-        geckoSession?.goBack()
+        geckoSession?.goBack(null)
     }
 
     fun canGoBack(): Boolean = currentUrl.isNotEmpty()
