@@ -3,87 +3,116 @@ package com.nyro.browser.extensions
 import android.content.Context
 import com.nyro.browser.extensions.models.Extension
 import com.nyro.browser.utils.Logger
-import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
-import org.mozilla.geckoview.WebExtension
+import com.nyro.browser.utils.ManifestParser
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class ExtensionManager @Inject constructor(
-    @ApplicationContext private val context: Context,
+    private val context: Context,
     private val chromeWebStoreClient: ChromeWebStoreClient,
     private val manifestParser: ManifestParser
 ) {
-    companion object {
-        private const val TAG = "ExtensionManager"
+    
+    private val extensions = mutableMapOf<String, Extension>()
+    private val extensionsDir: File by lazy {
+        File(context.filesDir, "extensions").apply { mkdirs() }
     }
-
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val _extensions = MutableStateFlow<List<Extension>>(emptyList())
-    val extensions: StateFlow<List<Extension>> = _extensions.asStateFlow()
-
-    private val extensionDir = File(context.filesDir, "extensions").apply { mkdirs() }
-    private val unpackedDir = File(context.filesDir, "extensions/unpacked").apply { mkdirs() }
-
-    init { loadExtensions() }
-
-    private fun loadExtensions() {
-        scope.launch {
-            val installed = extensionDir.listFiles()?.filter { it.extension == "crx" } ?: emptyList()
-            val unpacked = unpackedDir.listFiles()?.filter { it.isDirectory } ?: emptyList()
-            val loaded = (installed + unpacked).mapNotNull { parseExtension(it) }
-            _extensions.value = loaded
-        }
-    }
-
-    private suspend fun parseExtension(file: File): Extension? {
+    
+    suspend fun installExtension(extensionId: String, version: String): Boolean {
         return try {
-            if (file.extension == "crx") {
-                val manifest = manifestParser.parseFromCrx(file.readBytes())
-                Extension.fromManifest(manifest, file.absolutePath)
-            } else {
-                val manifestFile = File(file, "manifest.json")
-                if (manifestFile.exists()) {
-                    val manifest = manifestParser.parse(manifestFile)
-                    Extension.fromManifest(manifest, file.absolutePath)
-                } else null
+            Logger.d("ExtensionManager", "Installing extension: $extensionId")
+            
+            // Download the extension
+            val extensionData = chromeWebStoreClient.downloadExtension(extensionId)
+            
+            // Save extension files
+            val extensionDir = File(extensionsDir, extensionId)
+            extensionDir.mkdirs()
+            
+            // Parse manifest
+            val manifestFile = File(extensionDir, "manifest.json")
+            manifestFile.writeBytes(extensionData)
+            
+            val manifest = manifestParser.parse(manifestFile)
+            if (manifest == null) {
+                Logger.e("ExtensionManager", "Failed to parse manifest for: $extensionId")
+                return false
             }
-        } catch (e: Exception) {
-            Logger.e(TAG, "Failed to parse extension: ${file.name}", e)
-            null
-        }
-    }
-
-    fun installFromChromeStore(extensionId: String) {
-        scope.launch {
-            try {
-                val crx = chromeWebStoreClient.downloadCrx(extensionId)
-                val dest = File(extensionDir, "$extensionId.crx")
-                dest.writeBytes(crx)
-                loadExtensions()
-            } catch (e: Exception) {
-                Logger.e(TAG, "Failed to download extension", e)
-            }
-        }
-    }
-
-    fun registerWithGecko(extension: Extension): WebExtension? {
-        return try {
-            val controller = org.mozilla.geckoview.WebExtensionController(
-                context, extension.id, extension.sourcePath
+            
+            // Create extension object
+            val extension = Extension(
+                id = extensionId,
+                name = manifest.name,
+                version = manifest.version,
+                manifest = manifest,
+                path = extensionDir,
+                isEnabled = true,
+                permissionsGranted = manifest.permissions ?: emptyList()
             )
-            controller.createWebExtension()
+            
+            extensions[extensionId] = extension
+            Logger.d("ExtensionManager", "Successfully installed extension: ${manifest.name}")
+            true
+            
         } catch (e: Exception) {
-            Logger.e(TAG, "Failed to register WebExtension", e)
-            null
+            Logger.e("ExtensionManager", "Failed to install extension: $extensionId", e)
+            false
         }
+    }
+    
+    fun uninstallExtension(extensionId: String): Boolean {
+        return try {
+            val extension = extensions.remove(extensionId)
+            if (extension != null) {
+                extension.path.deleteRecursively()
+                Logger.d("ExtensionManager", "Uninstalled extension: ${extension.name}")
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Logger.e("ExtensionManager", "Failed to uninstall extension: $extensionId", e)
+            false
+        }
+    }
+    
+    fun enableExtension(extensionId: String): Boolean {
+        val extension = extensions[extensionId]
+        return if (extension != null) {
+            extensions[extensionId] = extension.copy(isEnabled = true)
+            Logger.d("ExtensionManager", "Enabled extension: ${extension.name}")
+            true
+        } else {
+            false
+        }
+    }
+    
+    fun disableExtension(extensionId: String): Boolean {
+        val extension = extensions[extensionId]
+        return if (extension != null) {
+            extensions[extensionId] = extension.copy(isEnabled = false)
+            Logger.d("ExtensionManager", "Disabled extension: ${extension.name}")
+            true
+        } else {
+            false
+        }
+    }
+    
+    fun getExtension(extensionId: String): Extension? {
+        return extensions[extensionId]
+    }
+    
+    fun getAllExtensions(): List<Extension> {
+        return extensions.values.toList()
+    }
+    
+    fun getEnabledExtensions(): List<Extension> {
+        return extensions.values.filter { it.isEnabled }
+    }
+    
+    fun isExtensionInstalled(extensionId: String): Boolean {
+        return extensions.containsKey(extensionId)
     }
 }
