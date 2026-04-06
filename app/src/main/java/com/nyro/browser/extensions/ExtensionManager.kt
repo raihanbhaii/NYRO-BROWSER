@@ -1,6 +1,5 @@
 package com.nyro.browser.extensions
 
-import com.nyro.browser.utils.Logger
 import android.content.Context
 import com.nyro.browser.extensions.models.Extension
 import com.nyro.browser.extensions.models.Manifest
@@ -111,9 +110,7 @@ class ExtensionManager @Inject constructor(
             updateEnabledExtensions()
             Logger.d("ExtensionManager", "Enabled extension: ${extension.name}")
             true
-        } else {
-            false
-        }
+        } else false
     }
     
     fun disableExtension(extensionId: String): Boolean {
@@ -123,9 +120,7 @@ class ExtensionManager @Inject constructor(
             updateEnabledExtensions()
             Logger.d("ExtensionManager", "Disabled extension: ${extension.name}")
             true
-        } else {
-            false
-        }
+        } else false
     }
     
     private fun updateEnabledExtensions() {
