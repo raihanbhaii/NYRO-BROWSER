@@ -7,43 +7,54 @@ import org.cef.browser.CefBrowser
 import org.cef.handler.CefAppHandlerAdapter
 import java.io.File
 import javax.swing.JFrame
+import javax.swing.SwingUtilities
 import javax.swing.WindowConstants
 
 object Main {
     @JvmStatic
     fun main(args: Array<String>) {
-        // 1. Setup JCEF
-        val cefSettings = CefSettings()
-        cefSettings.cache_path = File(System.getProperty("user.home"), ".nyro_cache").path
-        cefSettings.windowless_rendering_enabled = false
+        // Set system properties for JCEF
+        System.setProperty("jcef.debug", "false")
+        
+        // Setup CEF settings
+        val cefSettings = CefSettings().apply {
+            cache_path = File(System.getProperty("user.home"), ".nyro_cache").absolutePath
+            windowless_rendering_enabled = false
+            locale = "en-US"
+            log_file = File(System.getProperty("user.home"), ".nyro_browser.log").absolutePath
+            log_severity = CefSettings.LogSeverity.LOGSEVERITY_DISABLE
+        }
 
-        val appHandler = object : CefAppHandlerAdapter(args) {
+        // App handler for lifecycle
+        val appHandler = object : CefAppHandlerAdapter(arrayOf()) {
             override fun stateHasChanged(state: CefApp.CefAppState) {
-                if (state == CefApp.CefAppState.TERMINATED) System.exit(0)
+                if (state == CefApp.CefAppState.TERMINATED) {
+                    System.exit(0)
+                }
             }
         }
 
-        // 2. Initialize App
-        val cefApp = CefApp.getInstance(args, cefSettings, appHandler)
-        val cefClient = cefApp.createClient()
+        // Initialize CEF
+        val cefApp = CefApp.getInstance(arrayOf(), cefSettings, appHandler)
+        val client = cefApp.createClient()
 
-        // 3. Create Main Window
-        val frame = JFrame("NyroBrowser").apply {
-            defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
-            size = java.awt.Dimension(1280, 800)
-            locationRelativeTo = null
-            isVisible = true
+        // Create browser on EDT (Swing thread)
+        SwingUtilities.invokeLater {
+            val frame = JFrame("NyroBrowser").apply {
+                defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
+                setSize(1280, 800)
+                minimumSize = java.awt.Dimension(800, 600)
+                locationRelativeTo = null
+                isVisible = true
+            }
+
+            // Load local UI file
+            val uiPath = File("ui/index.html").absoluteFile.toURI().toString()
+            val browser = client.createBrowser(uiPath, false, false)
+
+            // Add browser to frame
+            frame.add(browser.uiComponent)
+            frame.isVisible = true
         }
-
-        // 4. Create Browser
-        val browser: CefBrowser = cefClient.createBrowser(
-            "https://nyro.local/ui/index.html", // Loads local UI
-            false, // Windowless
-            false // Transparent
-        )
-
-        // 5. Add to Window
-        frame.add(browser.uiComponent)
-        frame.isVisible = true
     }
 }
