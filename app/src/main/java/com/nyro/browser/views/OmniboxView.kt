@@ -2,14 +2,10 @@ package com.nyro.browser.views
 
 import android.content.Context
 import android.util.AttributeSet
-import android.view.KeyEvent
-import android.view.LayoutParams
-import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
-import androidx.core.widget.doAfterTextChanged
 
 class OmniboxView @JvmOverloads constructor(
     context: Context,
