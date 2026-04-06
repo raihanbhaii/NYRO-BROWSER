@@ -11,7 +11,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://mozilla.github.io/geckoview/maven2")
+        maven("https://maven.mozilla.org/maven2/")  // ← FIXED URL
     }
 }
 
