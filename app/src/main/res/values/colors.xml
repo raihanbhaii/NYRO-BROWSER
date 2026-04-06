@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light Theme -->
+    <color name="color_primary_light">#1a73e8</color>
+    <color name="color_primary_variant_light">#1557b0</color>
+    <color name="color_on_primary_light">#ffffff</color>
+    <color name="color_secondary_light">#5f6368</color>
+    <color name="color_on_secondary_light">#ffffff</color>
+    <color name="color_background_light">#ffffff</color>
+    <color name="color_surface_light">#f8f9fa</color>
+    <color name="color_on_background_light">#202124</color>
+    <color name="color_on_surface_light">#202124</color>
+    <color name="color_error_light">#d93025</color>
+    <color name="color_on_error_light">#ffffff</color>
+    <color name="color_outline_light">#dadce0</color>
+    
+    <!-- Dark Theme -->
+    <color name="color_primary_dark">#8ab4f8</color>
+    <color name="color_primary_variant_dark">#669df6</color>
+    <color name="color_on_primary_dark">#000000</color>
+    <color name="color_secondary_dark">#9aa0a6</color>
+    <color name="color_on_secondary_dark">#000000</color>
+    <color name="color_background_dark">#202124</color>
+    <color name="color_surface_dark">#292a2d</color>
+    <color name="color_on_background_dark">#e8eaed</color>
+    <color name="color_on_surface_dark">#e8eaed</color>
+    <color name="color_error_dark">#f28b82</color>
+    <color name="color_on_error_dark">#000000</color>
+    <color name="color_outline_dark">#5f6368</color>
+    
+    <!-- Common -->
+    <color name="color_secure">#34a853</color>
+    <color name="color_warning">#fbbc04</color>
+    <color name="color_tab_active">#323639</color>
+    <color name="color_tab_inactive">#292a2d</color>
+    <color name="color_omnibox_background">#202124</color>
+    <color name="color_omnibox_border">#3c4043</color>
+    
+    <!-- Status Bar -->
+    <color name="status_bar_light">#ffffff</color>
+    <color name="status_bar_dark">#202124</color>
+    <color name="nav_bar_light">#ffffff</color>
+    <color name="nav_bar_dark">#202124</color>
+</resources>
