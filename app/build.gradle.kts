@@ -3,7 +3,8 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("kotlin-kapt") 
-    id("com.google.dagger.hilt.android") 
+    id("com.google.dagger.hilt.android")
+    id("org.jetbrains.kotlin.plugin.serialization") // Add this for JSON serialization
 }
 
 // 2. Android configuration goes second
@@ -35,6 +36,8 @@ android {
     
     buildFeatures {
         buildConfig = true
+        dataBinding = true  // ✅ CRITICAL - enables ViewBinding and DataBinding
+        viewBinding = true  // ✅ Also enable view binding
     }
 }
 
@@ -53,16 +56,30 @@ dependencies {
     // GeckoView
     implementation("org.mozilla.geckoview:geckoview:124.0.20240311145044") 
 
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    
+    // JSON serialization
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
-
+    implementation("com.google.code.gson:gson:2.10.1")  // Add GSON for JSON parsing
+    
+    // Networking
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    
+    // Dependency Injection
     implementation("com.google.dagger:hilt-android:2.50")
     kapt("com.google.dagger:hilt-compiler:2.50")
-
+    
+    // Desugaring for Java 8+ features
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
 
+    // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
+}
+
+// Allow Hilt to work with Kotlin
+kapt {
+    correctErrorTypes = true
 }
