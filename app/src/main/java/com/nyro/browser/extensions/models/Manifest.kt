@@ -28,10 +28,11 @@ data class Manifest(
     val updateUrl: String? = null,
     val key: String? = null,
     val oauth2: Oauth2? = null,
-    val permissions: List<String>? = null,
-    val optionalPermissions: List<String>? = null,
-    val hostPermissions: List<String>? = null,
-    val contentSecurityPolicy: ContentSecurityPolicy? = null
+    val optionalPermissions: List<String>? = null
+    // ❌ REMOVED DUPLICATES:
+    // - permissions (already defined above)
+    // - hostPermissions (already defined above)  
+    // - contentSecurityPolicy (already defined above)
 ) {
     @Serializable
     data class Action(
@@ -58,8 +59,8 @@ data class Manifest(
     data class WebAccessibleResource(
         val resources: List<String>,
         val matches: List<String>? = null,
-        val extensionIds: List<String>? = null,
-        val matches: List<String>? = null
+        val extensionIds: List<String>? = null
+        // ❌ REMOVED duplicate 'matches' property
     )
     
     @Serializable
