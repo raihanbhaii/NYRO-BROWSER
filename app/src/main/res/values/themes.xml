@@ -1,0 +1,56 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Light Theme -->
+    <style name="Theme.NyroBrowser.Light" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/color_primary_light</item>
+        <item name="colorPrimaryVariant">@color/color_primary_variant_light</item>
+        <item name="colorOnPrimary">@color/color_on_primary_light</item>
+        <item name="colorSecondary">@color/color_secondary_light</item>
+        <item name="colorOnSecondary">@color/color_on_secondary_light</item>
+        <item name="android:colorBackground">@color/color_background_light</item>
+        <item name="colorSurface">@color/color_surface_light</item>
+        <item name="colorOnBackground">@color/color_on_background_light</item>
+        <item name="colorOnSurface">@color/color_on_surface_light</item>
+        <item name="colorError">@color/color_error_light</item>
+        <item name="colorOnError">@color/color_on_error_light</item>
+        <item name="colorOutline">@color/color_outline_light</item>
+        
+        <item name="android:statusBarColor">@color/status_bar_light</item>
+        <item name="android:navigationBarColor">@color/nav_bar_light</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">true</item>
+        
+        <item name="android:windowBackground">@color/color_background_light</item>
+        <item name="android:textColorPrimary">@color/color_on_background_light</item>
+        <item name="android:textColorSecondary">@color/color_secondary_light</item>
+    </style>
+    
+    <!-- Dark Theme -->
+    <style name="Theme.NyroBrowser.Dark" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/color_primary_dark</item>
+        <item name="colorPrimaryVariant">@color/color_primary_variant_dark</item>
+        <item name="colorOnPrimary">@color/color_on_primary_dark</item>
+        <item name="colorSecondary">@color/color_secondary_dark</item>
+        <item name="colorOnSecondary">@color/color_on_secondary_dark</item>
+        <item name="android:colorBackground">@color/color_background_dark</item>
+        <item name="colorSurface">@color/color_surface_dark</item>
+        <item name="colorOnBackground">@color/color_on_background_dark</item>
+        <item name="colorOnSurface">@color/color_on_surface_dark</item>
+        <item name="colorError">@color/color_error_dark</item>
+        <item name="colorOnError">@color/color_on_error_dark</item>
+        <item name="colorOutline">@color/color_outline_dark</item>
+        
+        <item name="android:statusBarColor">@color/status_bar_dark</item>
+        <item name="android:navigationBarColor">@color/nav_bar_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="o_mr1">false</item>
+        
+        <item name="android:windowBackground">@color/color_background_dark</item>
+        <item name="android:textColorPrimary">@color/color_on_background_dark</item>
+        <item name="android:textColorSecondary">@color/color_secondary_dark</item>
+    </style>
+    
+    <!-- Default Theme (follows system) -->
+    <style name="Theme.NyroBrowser" parent="Theme.NyroBrowser.Light">
+        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+    </style>
+</resources>
