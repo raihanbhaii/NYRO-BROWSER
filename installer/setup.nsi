@@ -26,19 +26,19 @@ Section "Main"
   SetDetailsPrint none
   
   DetailPrint "Extracting Chromium Engine..."
-  Sleep 1000
-  DetailPrint "Configuring Java Runtime..."
   Sleep 800
-  DetailPrint "Finalizing..."
+  DetailPrint "Configuring Java Runtime..."
   Sleep 600
+  DetailPrint "Creating Shortcuts..."
+  Sleep 400
   
   File /r "dist\package\*.*"
   
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   
-  CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\bin\NyroBrowser.exe"
+  CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\bin\NyroBrowser.exe" "" "$INSTDIR\app_icon.ico"
   CreateDirectory "$SMPROGRAMS\${APP_NAME}"
-  CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\bin\NyroBrowser.exe"
+  CreateShortCut "$SMPROGRAMS\${APP_NAME}\${APP_NAME}.lnk" "$INSTDIR\bin\NyroBrowser.exe" "" "$INSTDIR\app_icon.ico"
 SectionEnd
 
 Section "Uninstall"
