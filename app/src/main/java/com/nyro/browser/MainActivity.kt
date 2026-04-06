@@ -17,7 +17,7 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    
+
     private lateinit var toolbar: Toolbar
     private lateinit var viewPager: ViewPager2
     private lateinit var omniboxView: OmniboxView
@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
         }
-        
+
         toolbar = Toolbar(this).apply {
             id = ViewCompat.generateViewId()
             layoutParams = LinearLayout.LayoutParams(
@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
             setTitleTextColor(android.graphics.Color.WHITE)
             setBackgroundColor(android.graphics.Color.parseColor("#2196F3"))
         }
-        
+
         omniboxView = OmniboxView(this).apply {
             id = ViewCompat.generateViewId()
             layoutParams = LinearLayout.LayoutParams(
@@ -59,7 +59,7 @@ class MainActivity : AppCompatActivity() {
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
         }
-        
+
         viewPager = ViewPager2(this).apply {
             id = ViewCompat.generateViewId()
             layoutParams = LinearLayout.LayoutParams(
@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
                 1f
             )
         }
-        
+
         bottomNavigation = BottomNavigationView(this).apply {
             id = ViewCompat.generateViewId()
             layoutParams = LinearLayout.LayoutParams(
@@ -77,14 +77,14 @@ class MainActivity : AppCompatActivity() {
             )
             setupBottomMenu()
         }
-        
+
         mainContainer.addView(toolbar)
         mainContainer.addView(omniboxView)
         mainContainer.addView(viewPager)
         mainContainer.addView(bottomNavigation)
-        
+
         setContentView(mainContainer)
-        
+
         ViewCompat.setOnApplyWindowInsetsListener(mainContainer) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -103,7 +103,7 @@ class MainActivity : AppCompatActivity() {
         menu.add(0, 3, 2, "Settings").apply {
             setIcon(android.R.drawable.ic_menu_preferences)
         }
-        
+
         setOnNavigationItemSelectedListener { item ->
             when (item.itemId) {
                 1 -> createNewTab()
@@ -117,7 +117,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupToolbar() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayShowTitleEnabled(true)
-        
+
         omniboxView.setOnNavigateListener { url ->
             getActiveFragment()?.navigate(url)
         }
@@ -145,10 +145,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateToolbarForCurrentTab() {
-       getActiveFragment()?.let { fragment ->
-    omniboxView.setUrl(fragment.currentUrl)        // ← fixed
-    omniboxView.setLoading(fragment.isLoading())
-}
+        getActiveFragment()?.let { fragment ->
+            omniboxView.setUrl(fragment.currentUrl)
+            omniboxView.setLoading(fragment.isLoading())
+        }
+    }
 
     private fun showTabManager() {
         // TODO: implement tab switcher
@@ -169,10 +170,13 @@ class MainActivity : AppCompatActivity() {
 
     private inner class BrowserAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
         override fun getItemCount() = tabCount
+
         override fun createFragment(position: Int): Fragment {
             return BrowserFragment.newInstance(position)
         }
+
         override fun getItemId(position: Int) = position.toLong()
+
         override fun containsItem(itemId: Long) = itemId < tabCount.toLong()
     }
 }
