@@ -11,7 +11,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        maven("https://maven.mozilla.org/maven2/")  // ← FIXED URL
+        maven("https://maven.mozilla.org/maven2/")  // ← THIS IS THE ONLY CHANGE NEEDED
     }
 }
 
