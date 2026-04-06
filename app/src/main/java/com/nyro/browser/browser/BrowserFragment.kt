@@ -7,47 +7,32 @@ import android.view.ViewGroup
 import android.widget.FrameLayout
 import androidx.core.view.ViewCompat
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import com.nyro.browser.utils.Settings
-import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
-import javax.inject.Inject
 
-@AndroidEntryPoint
 class BrowserFragment : Fragment() {
     
     companion object {
         private const val ARG_TAB_ID = "tab_id"
         
-        fun newInstance(tabId: String): BrowserFragment {
+        fun newInstance(tabId: Int): BrowserFragment {
             return BrowserFragment().apply {
                 arguments = Bundle().apply {
-                    putString(ARG_TAB_ID, tabId)
+                    putInt(ARG_TAB_ID, tabId)
                 }
             }
         }
     }
     
-    @Inject
-    lateinit var settings: Settings
-    
     private var geckoView: GeckoView? = null
     private var geckoSession: GeckoSession? = null
-    private var tabId: String? = null
     private var runtime: GeckoRuntime? = null
     
     var currentUrl: String = ""
         private set
-    var isLoading: Boolean = false
+    var loading: Boolean = false
         private set
-    
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        tabId = arguments?.getString(ARG_TAB_ID)
-    }
     
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -77,32 +62,33 @@ class BrowserFragment : Fragment() {
     }
     
     private fun setupGeckoView() {
-        runtime = GeckoRuntime.create(requireContext())
+        runtime = NyroApplication.runtime
         geckoSession = GeckoSession()
         
-        val sessionSettings = GeckoSession.Settings.Builder()
-            .allowJavascript(settings.isJavaScriptEnabled())
-            .build()
-        geckoSession?.settings = sessionSettings
-        
-        setupSessionDelegates()
-        geckoSession?.open(runtime)
-        geckoView?.setSession(geckoSession)
-        
-        // Load default page
-        geckoSession?.loadUri("https://www.google.com")
-    }
-    
-    private fun setupSessionDelegates() {
         geckoSession?.progressDelegate = object : GeckoSession.ProgressDelegate {
-            override fun onLoadingChange(session: GeckoSession, isLoading: Boolean) {
-                this@BrowserFragment.isLoading = isLoading
+            override fun onPageStart(session: GeckoSession, url: String) {
+                loading = true
+                currentUrl = url
             }
-            
-            override fun onLocationChange(session: GeckoSession, url: String?) {
+            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                loading = false
+            }
+        }
+
+        geckoSession?.navigationDelegate = object : GeckoSession.NavigationDelegate {
+            override fun onLocationChange(
+                session: GeckoSession,
+                url: String?,
+                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
+                hasUserGesture: Boolean
+            ) {
                 url?.let { currentUrl = it }
             }
         }
+
+        geckoSession?.open(runtime!!)
+        geckoView?.setSession(geckoSession!!)
+        geckoSession?.loadUri("https://www.google.com")
     }
     
     fun navigate(url: String) {
@@ -111,29 +97,31 @@ class BrowserFragment : Fragment() {
     }
     
     fun goBack() {
-        geckoSession?.goBack()
+        geckoSession?.goBack(null)
     }
     
-    fun canGoBack(): Boolean = geckoSession?.canGoBack ?: false
+    fun canGoBack(): Boolean {
+        return currentUrl.isNotEmpty()
+    }
     
     fun getCurrentUrl(): String = currentUrl
     
-    fun isLoading(): Boolean = isLoading
+    fun isLoading(): Boolean = loading
     
     override fun onResume() {
         super.onResume()
-        geckoView?.onResume()
+        geckoSession?.resume()
     }
     
     override fun onPause() {
         super.onPause()
-        geckoView?.onPause()
+        geckoSession?.suspend()
     }
     
     override fun onDestroyView() {
         super.onDestroyView()
         geckoSession?.close()
-        geckoView?.setSession(null)
+        geckoView?.releaseSession()
         geckoView = null
         geckoSession = null
     }
