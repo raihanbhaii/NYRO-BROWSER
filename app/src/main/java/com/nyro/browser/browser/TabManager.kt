@@ -1,49 +1,57 @@
 package com.nyro.browser.browser
 
-import android.webkit.WebView
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class TabManager @Inject constructor() {
     
-    private val tabs = mutableMapOf<String, WebView>()
-    private var currentTabId: String? = null
+    data class Tab(
+        val id: String,
+        var url: String = "",
+        var title: String = "",
+        var isLoading: Boolean = false,
+        var canGoBack: Boolean = false,
+        var canGoForward: Boolean = false,
+        var isSecure: Boolean = false
+    )
     
-    fun createTab(tabId: String, webView: WebView) {
-        tabs[tabId] = webView
-        currentTabId = tabId
+    private val tabs = mutableMapOf<String, Tab>()
+    
+    fun getTab(id: String): Tab? = tabs[id]
+    
+    fun createTab(id: String): Tab {
+        val tab = Tab(id = id)
+        tabs[id] = tab
+        return tab
     }
     
-    fun getCurrentTab(): WebView? {
-        return currentTabId?.let { tabs[it] }
+    fun updateTabLoading(id: String, isLoading: Boolean) {
+        tabs[id]?.isLoading = isLoading
     }
     
-    fun getTab(tabId: String): WebView? {
-        return tabs[tabId]
+    fun updateTabUrl(id: String, url: String) {
+        tabs[id]?.url = url
     }
     
-    fun closeTab(tabId: String) {
-        tabs.remove(tabId)
-        if (currentTabId == tabId) {
-            currentTabId = tabs.keys.firstOrNull()
+    fun updateTabTitle(id: String, title: String) {
+        tabs[id]?.title = title
+    }
+    
+    fun updateTabSecurity(id: String, isSecure: Boolean) {
+        tabs[id]?.isSecure = isSecure
+    }
+    
+    fun updateTabNavigation(id: String, canGoBack: Boolean, canGoForward: Boolean) {
+        tabs[id]?.apply {
+            this.canGoBack = canGoBack
+            this.canGoForward = canGoForward
         }
     }
     
-    fun switchToTab(tabId: String) {
-        if (tabs.containsKey(tabId)) {
-            currentTabId = tabId
-        }
+    fun closeTab(id: String) {
+        tabs.remove(id)
     }
     
-    fun getAllTabs(): List<WebView> {
-        return tabs.values.toList()
-    }
-    
-    fun getTabCount(): Int = tabs.size
-    
-    fun closeAllTabs() {
-        tabs.clear()
-        currentTabId = null
-    }
+    fun getAllTabs(): List<Tab> = tabs.values.toList()
 }
