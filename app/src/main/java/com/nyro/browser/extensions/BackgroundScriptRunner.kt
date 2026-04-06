@@ -1,6 +1,5 @@
 package com.nyro.browser.extensions
 
-import com.nyro.browser.utils.Logger
 import android.content.Context
 import com.nyro.browser.extensions.models.Manifest
 import com.nyro.browser.utils.Logger
@@ -18,7 +17,6 @@ class BackgroundScriptRunner @Inject constructor(
     
     fun runBackgroundScripts(manifest: Manifest, extensionPath: String) {
         val backgroundScripts = manifest.background?.scripts ?: return
-        
         backgroundScripts.forEach { script ->
             runScript(extensionPath, script)
         }
@@ -53,8 +51,6 @@ class BackgroundScriptRunner @Inject constructor(
     }
     
     private fun executeBackgroundScript(scriptContent: String) {
-        // In a real implementation, you would execute this in a JavaScript engine
-        // For now, we just log it
         Logger.d("BackgroundScriptRunner", "Executing background script of length: ${scriptContent.length}")
     }
     
