@@ -2,17 +2,19 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt") // Required for kapt("...")
-    id("com.google.dagger.hilt.android") // Required for Hilt
+    id("kotlin-kapt") 
+    id("com.google.dagger.hilt.android") 
 }
 
 // 2. Android configuration goes second
 android {
-    namespace = "com.your.package.name" // Replace with your actual app package name
+    // This defines where your R file and BuildConfig are generated
+    namespace = "com.nyro.browser" 
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.your.package.name" // Replace with your actual app package name
+        // This is your unique ID on the Google Play Store
+        applicationId = "com.nyro.browser" 
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -22,7 +24,6 @@ android {
     }
 
     compileOptions {
-        // Required for coreLibraryDesugaring
         isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -30,6 +31,10 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+    
+    buildFeatures {
+        buildConfig = true
     }
 }
 
@@ -45,8 +50,8 @@ dependencies {
     implementation("androidx.work:work-runtime-ktx:2.9.0")
     implementation("androidx.preference:preference-ktx:1.2.1")
 
-    // GeckoView - using latest stable version with correct repository
-    implementation("org.mozilla.geckoview:geckoview:124.0.20240311145044") // Using a stable version
+    // GeckoView
+    implementation("org.mozilla.geckoview:geckoview:124.0.20240311145044") 
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.2")
