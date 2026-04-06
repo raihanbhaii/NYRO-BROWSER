@@ -30,65 +30,52 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
-      - name: Cache Gradle Wrapper
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+      # ✅ FIX: Use PowerShell syntax for Windows
+      - name: Create Installer Folder
+        run: |
+          New-Item -ItemType Directory -Force -Path "installer"
 
-      # 1. Download Installer Assets (Loading Screen & Icon)
+      # ✅ FIX: Download proper ICO (not SVG) for NSIS
       - name: Download Installer Assets
         run: |
-          mkdir -p installer
-          # Generic browser icon
-          Invoke-WebRequest -Uri "https://upload.wikimedia.org/wikipedia/commons/4/49/Google_Chrome_icon_%28February_2022%29.svg" -OutFile "installer/app_icon.ico" 
-          # Simple loading screen (using a reliable placeholder)
+          # Download PNG loading screen
           Invoke-WebRequest -Uri "https://placehold.co/150x57/202124/white?text=Loading+NyroBrowser" -OutFile "installer/loading_screen.png"
+          # Download ICO icon (convert via API or use direct ICO link)
+          Invoke-WebRequest -Uri "https://www.iconpacks.net/icons/2/free-google-chrome-icon-2631-thumb.png" -OutFile "installer/temp_icon.png"
+          # Convert PNG to ICO using ImageMagick (pre-installed on windows-latest)
+          magick "installer/temp_icon.png" -define icon:auto-resize=256,128,64,48,32,16 "installer/app_icon.ico"
+          Remove-Item "installer/temp_icon.png"
 
-      # 2. Install NSIS
       - name: Install NSIS
         run: choco install nsis --no-progress
 
-      # 3. Build Kotlin App
       - name: Build App
-        run: ./gradlew build --no-daemon
+        run: ./gradlew installDist --no-daemon
 
-      # 4. Package for Installer (Stage files)
       - name: Stage Installer
         run: |
-          mkdir -p dist/package
-          # Copy the fat JAR or the exploded dist
-          Copy-Item "build/libs/*.jar" "dist/package/app.jar"
-          # JCEF needs native libs - Gradle usually puts them in a folder
-          # We assume the build task packages them, or we copy the JCEF folder
-          # For this simple setup, we assume a 'libs' folder with JCEF natives or a fat jar
-          # JCEF usually requires a specific folder structure. 
-          # We'll use the Gradle task to copy the runtime.
-          ./gradlew installDist
-          Copy-Item "build/install/NyroBrowser/*" "dist/package/" -Recurse -Force
+          New-Item -ItemType Directory -Force -Path "dist/package"
+          Copy-Item -Recurse "build/install/NyroBrowser/*" "dist/package/"
           Copy-Item "installer/loading_screen.png" "dist/package/"
           Copy-Item "installer/app_icon.ico" "dist/package/"
 
-      # 5. Compile NSIS Installer
-      - name: Compile Installer
+      - name: Compile NSIS Installer
         run: |
           makensis /V3 /DAPP_NAME="${{ env.APP_NAME }}" /DOUTFILE="${{ env.OUT_INSTALLER }}" installer/setup.nsi
           Move-Item "${{ env.OUT_INSTALLER }}" "dist/${{ env.OUT_INSTALLER }}"
 
-      # 6. Upload Artifact & Release
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
           path: dist/${{ env.OUT_INSTALLER }}
+          retention-days: 30
 
       - name: Auto Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: "build-${{ github.run_number }}"
-          name: "Auto Build #${{ github.run_number }}"
+          tag_name: "auto-build-${{ github.run_number }}"
+          name: "NyroBrowser Build #${{ github.run_number }}"
           draft: false
           generate_release_notes: true
           files: dist/${{ env.OUT_INSTALLER }}
