@@ -3,7 +3,7 @@
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use tauri::{command, Manager, Runtime, Window};
+use tauri::{command, Runtime, Window};
 
 /// Allows the frameless window to be dragged by the custom title bar.
 /// Called from the frontend via Tauri's invoke() when mousedown fires on the drag region.
