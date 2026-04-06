@@ -145,11 +145,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateToolbarForCurrentTab() {
-        getActiveFragment()?.let { fragment ->
-            omniboxView.setUrl(fragment.getCurrentUrl())
-            omniboxView.setLoading(fragment.isLoading())
-        }
-    }
+       getActiveFragment()?.let { fragment ->
+    omniboxView.setUrl(fragment.currentUrl)        // ← fixed
+    omniboxView.setLoading(fragment.isLoading())
+}
 
     private fun showTabManager() {
         // TODO: implement tab switcher
