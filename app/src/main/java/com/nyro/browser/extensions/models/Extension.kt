@@ -9,5 +9,6 @@ data class Extension(
     val manifest: Manifest,
     val path: File,
     val isEnabled: Boolean = true,
-    val permissionsGranted: List<String> = emptyList()
+    val permissionsGranted: List<String> = emptyList(),
+    val contentScripts: List<ContentScript> = emptyList()
 )
