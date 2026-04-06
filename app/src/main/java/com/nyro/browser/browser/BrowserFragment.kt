@@ -6,8 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
-import com.nyro.browser.R
-import com.nyro.browser.databinding.FragmentBrowserBinding
+import com.nyro.browser.R 
 import com.nyro.browser.extensions.ExtensionManager
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
