@@ -1,3 +1,39 @@
+// 1. Plugins MUST go first
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("kotlin-kapt") // Required for kapt("...")
+    id("com.google.dagger.hilt.android") // Required for Hilt
+}
+
+// 2. Android configuration goes second
+android {
+    namespace = "com.your.package.name" // Replace with your actual app package name
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = "com.your.package.name" // Replace with your actual app package name
+        minSdk = 24
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    compileOptions {
+        // Required for coreLibraryDesugaring
+        isCoreLibraryDesugaringEnabled = true 
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+// 3. Dependencies MUST go last
 dependencies {
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")
