@@ -57,15 +57,19 @@ jobs:
         run: ./gradlew bundleRelease --no-daemon
 
       - name: Sign & Build Release APK
-        if: github.ref == 'refs/heads/main' && secrets.KEYSTORE_BASE64 != ''
+        if: github.ref == 'refs/heads/main'
         run: |
-          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/nyro-release-key.jks
-          ./gradlew assembleRelease \
-            -Pandroid.injected.signing.store.file=app/nyro-release-key.jks \
-            -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
-            -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
-            -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
-            --no-daemon
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/nyro-release-key.jks
+            ./gradlew assembleRelease \
+              -Pandroid.injected.signing.store.file=app/nyro-release-key.jks \
+              -Pandroid.injected.signing.store.password=${{ secrets.KEYSTORE_PASSWORD }} \
+              -Pandroid.injected.signing.key.alias=${{ secrets.KEY_ALIAS }} \
+              -Pandroid.injected.signing.key.password=${{ secrets.KEY_PASSWORD }} \
+              --no-daemon
+          else
+            echo "No keystore secret found, skipping release signing."
+          fi
 
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
