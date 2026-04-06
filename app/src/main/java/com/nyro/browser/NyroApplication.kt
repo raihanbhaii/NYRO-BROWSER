@@ -7,7 +7,7 @@ import org.mozilla.geckoview.GeckoRuntimeSettings
 
 @HiltAndroidApp
 class NyroApplication : Application() {
-    
+
     companion object {
         lateinit var runtime: GeckoRuntime
             private set
@@ -21,7 +21,6 @@ class NyroApplication : Application() {
     private fun initializeGeckoRuntime() {
         val settings = GeckoRuntimeSettings.Builder()
             .consoleOutput(BuildConfig.DEBUG)
-            .remoteDebugging(BuildConfig.DEBUG)
             .build()
             
         runtime = GeckoRuntime.create(this, settings)
