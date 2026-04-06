@@ -46,7 +46,6 @@ class BrowserFragment : Fragment() {
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
             id = ViewCompat.generateViewId()
-
             geckoView = GeckoView(requireContext()).apply {
                 layoutParams = FrameLayout.LayoutParams(
                     FrameLayout.LayoutParams.MATCH_PARENT,
@@ -64,6 +63,7 @@ class BrowserFragment : Fragment() {
 
     private fun setupGeckoView() {
         runtime = NyroApplication.runtime
+
         geckoSession = GeckoSession()
 
         geckoSession?.progressDelegate = object : GeckoSession.ProgressDelegate {
@@ -80,8 +80,7 @@ class BrowserFragment : Fragment() {
             override fun onLocationChange(
                 session: GeckoSession,
                 url: String?,
-                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>,
-                hasUserGesture: Boolean
+                perms: MutableList<GeckoSession.PermissionDelegate.ContentPermission>
             ) {
                 url?.let { currentUrl = it }
             }
