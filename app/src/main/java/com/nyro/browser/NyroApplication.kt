@@ -21,7 +21,6 @@ class NyroApplication : Application() {
     private fun initializeGeckoRuntime() {
         val settings = GeckoRuntimeSettings.Builder()
             .consoleOutput(BuildConfig.DEBUG)
-            .aboutConfig(BuildConfig.DEBUG)
             .remoteDebugging(BuildConfig.DEBUG)
             .build()
             
