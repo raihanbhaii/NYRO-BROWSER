@@ -39,8 +39,10 @@ object AppModule {
     
     @Provides
     @Singleton
-    fun provideChromeWebStoreClient(okHttpClient: OkHttpClient): ChromeWebStoreClient = 
-        ChromeWebStoreClient(okHttpClient)
+    fun provideChromeWebStoreClient(
+        @ApplicationContext context: Context,
+        okHttpClient: OkHttpClient
+    ): ChromeWebStoreClient = ChromeWebStoreClient(context, okHttpClient)
     
     @Provides
     @Singleton
