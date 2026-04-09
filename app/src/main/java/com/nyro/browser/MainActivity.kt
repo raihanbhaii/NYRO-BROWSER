@@ -1,182 +1,315 @@
-package com.nyro.browser
+package com.nyro.browser.browser
 
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.view.Gravity
+import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
-import android.widget.LinearLayout
-import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.Toolbar
+import android.widget.*
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.viewpager2.widget.ViewPager2
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.nyro.browser.browser.BrowserFragment
-import com.nyro.browser.views.OmniboxView
-import dagger.hilt.android.AndroidEntryPoint
+import com.nyro.browser.NyroApplication
+import org.mozilla.geckoview.GeckoRuntime
+import org.mozilla.geckoview.GeckoSession
+import org.mozilla.geckoview.GeckoView
 
-@AndroidEntryPoint
-class MainActivity : AppCompatActivity() {
+class BrowserFragment : Fragment() {
 
-    private lateinit var toolbar: Toolbar
-    private lateinit var viewPager: ViewPager2
-    private lateinit var omniboxView: OmniboxView
-    private lateinit var bottomNavigation: BottomNavigationView
-    private lateinit var mainContainer: LinearLayout
-    private var tabCount = 1
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setupUI()
-        setupToolbar()
-        setupViewPager()
+    companion object {
+        private const val ARG_TAB_ID = "tab_id"
+        fun newInstance(tabId: Int) = BrowserFragment().apply {
+            arguments = Bundle().apply { putInt(ARG_TAB_ID, tabId) }
+        }
     }
 
-    private fun setupUI() {
-        mainContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
+    private var geckoView: GeckoView? = null
+    private var geckoSession: GeckoSession? = null
+    private var runtime: GeckoRuntime? = null
+    private var homeScreen: View? = null
+    private var isDesktopSite = false
+    private var isHomeVisible = true
+
+    var currentUrl: String = ""
+        private set
+    var loading: Boolean = false
+        private set
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View {
+        val root = FrameLayout(requireContext()).apply {
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
+            setBackgroundColor(Color.parseColor("#202124"))
         }
 
-        toolbar = Toolbar(this).apply {
-            id = ViewCompat.generateViewId()
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+        geckoView = GeckoView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
-            title = "NYRO Browser"
-            setTitleTextColor(android.graphics.Color.WHITE)
-            setBackgroundColor(android.graphics.Color.parseColor("#2196F3"))
+            visibility = View.GONE
         }
 
-        omniboxView = OmniboxView(this).apply {
-            id = ViewCompat.generateViewId()
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
+        homeScreen = buildHomeScreen()
+
+        root.addView(geckoView)
+        root.addView(homeScreen)
+
+        return root
+    }
+
+    private fun buildHomeScreen(): View {
+        return ScrollView(requireContext()).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
             )
-        }
+            setBackgroundColor(Color.parseColor("#202124"))
 
-        viewPager = ViewPager2(this).apply {
-            id = ViewCompat.generateViewId()
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            )
-        }
+            addView(LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(32, 80, 32, 48)
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT
+                )
 
-        bottomNavigation = BottomNavigationView(this).apply {
-            id = ViewCompat.generateViewId()
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-            setupBottomMenu()
-        }
+                // Google logo text
+                addView(TextView(requireContext()).apply {
+                    text = "Google"
+                    textSize = 52f
+                    typeface = Typeface.DEFAULT_BOLD
+                    gravity = Gravity.CENTER
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.bottomMargin = 32 }
+                    // Colorful Google-style letters
+                    val colored = android.text.SpannableString("Google")
+                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#4285F4")), 0, 1, 0)
+                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#EA4335")), 1, 2, 0)
+                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#FBBC05")), 2, 3, 0)
+                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#4285F4")), 3, 4, 0)
+                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#34A853")), 4, 5, 0)
+                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#EA4335")), 5, 6, 0)
+                    text = colored
+                })
 
-        mainContainer.addView(toolbar)
-        mainContainer.addView(omniboxView)
-        mainContainer.addView(viewPager)
-        mainContainer.addView(bottomNavigation)
+                // Shortcuts label
+                addView(TextView(requireContext()).apply {
+                    text = "Shortcuts"
+                    textSize = 11f
+                    setTextColor(Color.parseColor("#9aa0a6"))
+                    letterSpacing = 0.1f
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also {
+                        it.bottomMargin = 12
+                        it.topMargin = 8
+                    }
+                })
 
-        setContentView(mainContainer)
+                // Shortcut grid
+                val shortcuts = listOf(
+                    Triple("YT", "YouTube", "https://youtube.com"),
+                    Triple("R", "Reddit", "https://reddit.com"),
+                    Triple("GH", "GitHub", "https://github.com"),
+                    Triple("X", "Twitter", "https://twitter.com"),
+                    Triple("W", "Wikipedia", "https://wikipedia.org"),
+                    Triple("A", "Amazon", "https://amazon.com"),
+                    Triple("N", "Netflix", "https://netflix.com"),
+                    Triple("M", "Maps", "https://maps.google.com")
+                )
 
-        ViewCompat.setOnApplyWindowInsetsListener(mainContainer) { v, insets ->
-            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-            insets
+                val grid = GridLayout(requireContext()).apply {
+                    columnCount = 4
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).also { it.bottomMargin = 36 }
+                }
+
+                shortcuts.forEach { (abbr, name, url) ->
+                    val cell = LinearLayout(requireContext()).apply {
+                        orientation = LinearLayout.VERTICAL
+                        gravity = Gravity.CENTER
+                        val spec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1f)
+                        layoutParams = GridLayout.LayoutParams().apply {
+                            columnSpec = spec
+                            width = 0
+                            setMargins(8, 8, 8, 8)
+                        }
+                        setOnClickListener { navigate(url) }
+                        isClickable = true
+                        isFocusable = true
+
+                        // Icon circle
+                        addView(TextView(requireContext()).apply {
+                            text = abbr
+                            textSize = 16f
+                            typeface = Typeface.DEFAULT_BOLD
+                            setTextColor(Color.WHITE)
+                            gravity = Gravity.CENTER
+                            background = GradientDrawable().apply {
+                                shape = GradientDrawable.OVAL
+                                setColor(Color.parseColor("#303134"))
+                            }
+                            layoutParams = LinearLayout.LayoutParams(80, 80).also {
+                                it.bottomMargin = 6
+                            }
+                        })
+
+                        // Label
+                        addView(TextView(requireContext()).apply {
+                            text = name
+                            textSize = 11f
+                            setTextColor(Color.parseColor("#9aa0a6"))
+                            gravity = Gravity.CENTER
+                            maxLines = 1
+                            layoutParams = LinearLayout.LayoutParams(
+                                LinearLayout.LayoutParams.WRAP_CONTENT,
+                                LinearLayout.LayoutParams.WRAP_CONTENT
+                            )
+                        })
+                    }
+                    grid.addView(cell)
+                }
+
+                addView(grid)
+
+                // Divider
+                addView(View(requireContext()).apply {
+                    setBackgroundColor(Color.parseColor("#3c3c3c"))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, 1
+                    ).also { it.bottomMargin = 24 }
+                })
+
+                // Discover / recent section label
+                addView(TextView(requireContext()).apply {
+                    text = "🔍  Start typing in the address bar to search Google"
+                    textSize = 13f
+                    setTextColor(Color.parseColor("#9aa0a6"))
+                    gravity = Gravity.CENTER
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                })
+            })
         }
     }
 
-    private fun BottomNavigationView.setupBottomMenu() {
-        val menu = this.menu
-        menu.add(0, 1, 0, "New Tab").apply {
-            setIcon(android.R.drawable.ic_menu_add)
-        }
-        menu.add(0, 2, 1, "Tabs").apply {
-            setIcon(android.R.drawable.ic_menu_edit)
-        }
-        menu.add(0, 3, 2, "Settings").apply {
-            setIcon(android.R.drawable.ic_menu_preferences)
-        }
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupGeckoView()
+    }
 
-        setOnNavigationItemSelectedListener { item ->
-            when (item.itemId) {
-                1 -> createNewTab()
-                2 -> showTabManager()
-                3 -> showSettings()
+    private fun setupGeckoView() {
+        runtime = NyroApplication.runtime
+        geckoSession = GeckoSession()
+
+        geckoSession?.progressDelegate = object : GeckoSession.ProgressDelegate {
+            override fun onPageStart(session: GeckoSession, url: String) {
+                loading = true
+                currentUrl = url
+                activity?.runOnUiThread {
+                    (activity as? com.nyro.browser.MainActivity)?.onUrlChanged(url)
+                }
             }
-            true
-        }
-    }
 
-    private fun setupToolbar() {
-        setSupportActionBar(toolbar)
-        supportActionBar?.setDisplayShowTitleEnabled(true)
-
-        omniboxView.setOnNavigateListener { url ->
-            getActiveFragment()?.navigate(url)
-        }
-    }
-
-    private fun setupViewPager() {
-        viewPager.adapter = BrowserAdapter(this)
-        viewPager.isUserInputEnabled = false
-        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                updateToolbarForCurrentTab()
+            override fun onProgressChange(session: GeckoSession, progress: Int) {
+                if (progress == 100) loading = false
             }
-        })
-    }
 
-    private fun createNewTab() {
-        tabCount++
-        viewPager.adapter?.notifyItemInserted(tabCount - 1)
-        viewPager.currentItem = tabCount - 1
-    }
-
-    private fun getActiveFragment(): BrowserFragment? {
-        val pos = viewPager.currentItem
-        return supportFragmentManager.findFragmentByTag("f$pos") as? BrowserFragment
-    }
-
-    private fun updateToolbarForCurrentTab() {
-        getActiveFragment()?.let { fragment ->
-            omniboxView.setUrl(fragment.currentUrl)
-            omniboxView.setLoading(fragment.isLoading())
-        }
-    }
-
-    private fun showTabManager() {
-        // TODO: implement tab switcher
-    }
-
-    private fun showSettings() {
-        // TODO: implement settings
-    }
-
-    override fun onBackPressed() {
-        val fragment = getActiveFragment()
-        if (fragment?.canGoBack() == true) {
-            fragment.goBack()
-        } else {
-            super.onBackPressed()
-        }
-    }
-
-    private inner class BrowserAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
-        override fun getItemCount() = tabCount
-
-        override fun createFragment(position: Int): Fragment {
-            return BrowserFragment.newInstance(position)
+            override fun onPageStop(session: GeckoSession, success: Boolean) {
+                loading = false
+            }
         }
 
-        override fun getItemId(position: Int) = position.toLong()
+        geckoSession?.navigationDelegate = object : GeckoSession.NavigationDelegate {
+            override fun onLocationChange(
+                session: GeckoSession,
+                url: String?,
+                perms: List<GeckoSession.PermissionDelegate.ContentPermission>
+            ) {
+                url?.let {
+                    currentUrl = it
+                    activity?.runOnUiThread {
+                        (activity as? com.nyro.browser.MainActivity)?.onUrlChanged(it)
+                    }
+                }
+            }
+        }
 
-        override fun containsItem(itemId: Long) = itemId < tabCount.toLong()
+        geckoSession?.open(runtime!!)
+        geckoView?.setSession(geckoSession!!)
+    }
+
+    fun navigate(url: String) {
+        val finalUrl = when {
+            url.startsWith("http://") || url.startsWith("https://") -> url
+            url.contains(".") && !url.contains(" ") -> "https://$url"
+            else -> "https://www.google.com/search?q=${url.replace(" ", "+")}"
+        }
+        showBrowser()
+        geckoSession?.loadUri(finalUrl)
+    }
+
+    fun showHome() {
+        isHomeVisible = true
+        homeScreen?.visibility = View.VISIBLE
+        geckoView?.visibility = View.GONE
+        currentUrl = ""
+    }
+
+    private fun showBrowser() {
+        isHomeVisible = false
+        homeScreen?.visibility = View.GONE
+        geckoView?.visibility = View.VISIBLE
+    }
+
+    fun goBack() {
+        geckoSession?.goBack(false)
+    }
+
+    fun goForward() {
+        geckoSession?.goForward(false)
+    }
+
+    fun toggleDesktopSite() {
+        isDesktopSite = !isDesktopSite
+        val ua = if (isDesktopSite)
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
+        else ""
+        geckoSession?.settings?.userAgentOverride = ua
+        if (currentUrl.isNotEmpty()) navigate(currentUrl)
+        Toast.makeText(
+            requireContext(),
+            if (isDesktopSite) "Desktop site" else "Mobile site",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    fun canGoBack(): Boolean = !isHomeVisible
+
+    fun isLoading(): Boolean = loading
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        geckoSession?.close()
+        geckoView?.releaseSession()
+        geckoView = null
+        geckoSession = null
     }
 }
