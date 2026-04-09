@@ -1,315 +1,244 @@
-package com.nyro.browser.browser
+package com.nyro.browser
 
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.*
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
-import com.nyro.browser.NyroApplication
-import org.mozilla.geckoview.GeckoRuntime
-import org.mozilla.geckoview.GeckoSession
-import org.mozilla.geckoview.GeckoView
+import androidx.viewpager2.adapter.FragmentStateAdapter
+import androidx.viewpager2.widget.ViewPager2
+import com.nyro.browser.browser.BrowserFragment
+import com.nyro.browser.views.OmniboxView
+import dagger.hilt.android.AndroidEntryPoint
 
-class BrowserFragment : Fragment() {
+@AndroidEntryPoint
+class MainActivity : AppCompatActivity() {
 
-    companion object {
-        private const val ARG_TAB_ID = "tab_id"
-        fun newInstance(tabId: Int) = BrowserFragment().apply {
-            arguments = Bundle().apply { putInt(ARG_TAB_ID, tabId) }
-        }
+    private lateinit var viewPager: ViewPager2
+    private lateinit var omniboxView: OmniboxView
+    private lateinit var mainContainer: LinearLayout
+    private lateinit var tabCountBadge: TextView
+    private lateinit var bottomBar: LinearLayout
+    private var tabCount = 1
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.statusBarColor = Color.parseColor("#202124")
+        window.navigationBarColor = Color.parseColor("#202124")
+        setupUI()
+        setupViewPager()
     }
 
-    private var geckoView: GeckoView? = null
-    private var geckoSession: GeckoSession? = null
-    private var runtime: GeckoRuntime? = null
-    private var homeScreen: View? = null
-    private var isDesktopSite = false
-    private var isHomeVisible = true
-
-    var currentUrl: String = ""
-        private set
-    var loading: Boolean = false
-        private set
-
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
-        val root = FrameLayout(requireContext()).apply {
+    private fun setupUI() {
+        mainContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.parseColor("#202124"))
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT
             )
-            setBackgroundColor(Color.parseColor("#202124"))
         }
 
-        geckoView = GeckoView(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+        omniboxView = OmniboxView(this).apply {
+            id = ViewCompat.generateViewId()
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            visibility = View.GONE
+            setOnNavigateListener { input ->
+                getActiveFragment()?.navigate(input)
+            }
         }
 
-        homeScreen = buildHomeScreen()
+        val progressBar = omniboxView.getProgressBar().apply {
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 6
+            )
+        }
 
-        root.addView(geckoView)
-        root.addView(homeScreen)
+        viewPager = ViewPager2(this).apply {
+            id = ViewCompat.generateViewId()
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+            )
+        }
 
-        return root
+        bottomBar = buildBottomBar()
+
+        mainContainer.addView(omniboxView)
+        mainContainer.addView(progressBar)
+        mainContainer.addView(viewPager)
+        mainContainer.addView(bottomBar)
+
+        setContentView(mainContainer)
+
+        ViewCompat.setOnApplyWindowInsetsListener(mainContainer) { v, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
     }
 
-    private fun buildHomeScreen(): View {
-        return ScrollView(requireContext()).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
-            )
+    private fun buildBottomBar(): LinearLayout {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
             setBackgroundColor(Color.parseColor("#202124"))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            setPadding(0, 8, 0, 8)
 
-            addView(LinearLayout(requireContext()).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(32, 80, 32, 48)
-                layoutParams = FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT
+            addView(buildIconButton("<", "Back") {
+                val fragment = getActiveFragment()
+                if (fragment?.canGoBack() == true) fragment.goBack()
+            })
+
+            addView(buildIconButton(">", "Forward") {
+                getActiveFragment()?.goForward()
+            })
+
+            addView(buildIconButton("[ ]", "Home") {
+                getActiveFragment()?.showHome()
+                omniboxView.setUrl("")
+            })
+
+            val tabsBtn = FrameLayout(this@MainActivity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
                 )
+                isClickable = true
+                isFocusable = true
+                setOnClickListener { showTabManager() }
 
-                // Google logo text
-                addView(TextView(requireContext()).apply {
-                    text = "Google"
-                    textSize = 52f
+                val tabBox = TextView(this@MainActivity).apply {
+                    text = "1"
+                    textSize = 12f
+                    setTextColor(Color.parseColor("#e8eaed"))
+                    gravity = Gravity.CENTER
                     typeface = Typeface.DEFAULT_BOLD
-                    gravity = Gravity.CENTER
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).also { it.bottomMargin = 32 }
-                    // Colorful Google-style letters
-                    val colored = android.text.SpannableString("Google")
-                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#4285F4")), 0, 1, 0)
-                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#EA4335")), 1, 2, 0)
-                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#FBBC05")), 2, 3, 0)
-                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#4285F4")), 3, 4, 0)
-                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#34A853")), 4, 5, 0)
-                    colored.setSpan(android.text.style.ForegroundColorSpan(Color.parseColor("#EA4335")), 5, 6, 0)
-                    text = colored
-                })
-
-                // Shortcuts label
-                addView(TextView(requireContext()).apply {
-                    text = "Shortcuts"
-                    textSize = 11f
-                    setTextColor(Color.parseColor("#9aa0a6"))
-                    letterSpacing = 0.1f
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).also {
-                        it.bottomMargin = 12
-                        it.topMargin = 8
+                    background = GradientDrawable().apply {
+                        setColor(Color.TRANSPARENT)
+                        setStroke(2, Color.parseColor("#9aa0a6"))
+                        cornerRadius = 6f
                     }
-                })
-
-                // Shortcut grid
-                val shortcuts = listOf(
-                    Triple("YT", "YouTube", "https://youtube.com"),
-                    Triple("R", "Reddit", "https://reddit.com"),
-                    Triple("GH", "GitHub", "https://github.com"),
-                    Triple("X", "Twitter", "https://twitter.com"),
-                    Triple("W", "Wikipedia", "https://wikipedia.org"),
-                    Triple("A", "Amazon", "https://amazon.com"),
-                    Triple("N", "Netflix", "https://netflix.com"),
-                    Triple("M", "Maps", "https://maps.google.com")
-                )
-
-                val grid = GridLayout(requireContext()).apply {
-                    columnCount = 4
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).also { it.bottomMargin = 36 }
-                }
-
-                shortcuts.forEach { (abbr, name, url) ->
-                    val cell = LinearLayout(requireContext()).apply {
-                        orientation = LinearLayout.VERTICAL
-                        gravity = Gravity.CENTER
-                        val spec = GridLayout.spec(GridLayout.UNDEFINED, 1, 1f)
-                        layoutParams = GridLayout.LayoutParams().apply {
-                            columnSpec = spec
-                            width = 0
-                            setMargins(8, 8, 8, 8)
-                        }
-                        setOnClickListener { navigate(url) }
-                        isClickable = true
-                        isFocusable = true
-
-                        // Icon circle
-                        addView(TextView(requireContext()).apply {
-                            text = abbr
-                            textSize = 16f
-                            typeface = Typeface.DEFAULT_BOLD
-                            setTextColor(Color.WHITE)
-                            gravity = Gravity.CENTER
-                            background = GradientDrawable().apply {
-                                shape = GradientDrawable.OVAL
-                                setColor(Color.parseColor("#303134"))
-                            }
-                            layoutParams = LinearLayout.LayoutParams(80, 80).also {
-                                it.bottomMargin = 6
-                            }
-                        })
-
-                        // Label
-                        addView(TextView(requireContext()).apply {
-                            text = name
-                            textSize = 11f
-                            setTextColor(Color.parseColor("#9aa0a6"))
-                            gravity = Gravity.CENTER
-                            maxLines = 1
-                            layoutParams = LinearLayout.LayoutParams(
-                                LinearLayout.LayoutParams.WRAP_CONTENT,
-                                LinearLayout.LayoutParams.WRAP_CONTENT
-                            )
-                        })
+                    layoutParams = FrameLayout.LayoutParams(48, 48).also {
+                        it.gravity = Gravity.CENTER
                     }
-                    grid.addView(cell)
                 }
+                tabCountBadge = tabBox
+                addView(tabBox)
+            }
+            addView(tabsBtn)
 
-                addView(grid)
-
-                // Divider
-                addView(View(requireContext()).apply {
-                    setBackgroundColor(Color.parseColor("#3c3c3c"))
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT, 1
-                    ).also { it.bottomMargin = 24 }
-                })
-
-                // Discover / recent section label
-                addView(TextView(requireContext()).apply {
-                    text = "🔍  Start typing in the address bar to search Google"
-                    textSize = 13f
-                    setTextColor(Color.parseColor("#9aa0a6"))
-                    gravity = Gravity.CENTER
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                })
+            addView(buildIconButton("...", "Menu") {
+                showMenu()
             })
         }
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-        setupGeckoView()
-    }
-
-    private fun setupGeckoView() {
-        runtime = NyroApplication.runtime
-        geckoSession = GeckoSession()
-
-        geckoSession?.progressDelegate = object : GeckoSession.ProgressDelegate {
-            override fun onPageStart(session: GeckoSession, url: String) {
-                loading = true
-                currentUrl = url
-                activity?.runOnUiThread {
-                    (activity as? com.nyro.browser.MainActivity)?.onUrlChanged(url)
-                }
-            }
-
-            override fun onProgressChange(session: GeckoSession, progress: Int) {
-                if (progress == 100) loading = false
-            }
-
-            override fun onPageStop(session: GeckoSession, success: Boolean) {
-                loading = false
-            }
+    private fun buildIconButton(
+        label: String,
+        contentDesc: String,
+        onClick: () -> Unit
+    ): TextView {
+        return TextView(this).apply {
+            text = label
+            textSize = 16f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(Color.parseColor("#e8eaed"))
+            gravity = Gravity.CENTER
+            contentDescription = contentDesc
+            layoutParams = LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f
+            )
+            setPadding(0, 20, 0, 20)
+            setOnClickListener { onClick() }
+            isClickable = true
+            isFocusable = true
         }
+    }
 
-        geckoSession?.navigationDelegate = object : GeckoSession.NavigationDelegate {
-            override fun onLocationChange(
-                session: GeckoSession,
-                url: String?,
-                perms: List<GeckoSession.PermissionDelegate.ContentPermission>
-            ) {
-                url?.let {
-                    currentUrl = it
-                    activity?.runOnUiThread {
-                        (activity as? com.nyro.browser.MainActivity)?.onUrlChanged(it)
-                    }
-                }
+    private fun setupViewPager() {
+        viewPager.adapter = BrowserAdapter(this)
+        viewPager.isUserInputEnabled = false
+        viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                updateOmniboxForCurrentTab()
             }
+        })
+    }
+
+    fun onUrlChanged(url: String) {
+        runOnUiThread {
+            omniboxView.setUrl(url)
         }
-
-        geckoSession?.open(runtime!!)
-        geckoView?.setSession(geckoSession!!)
     }
 
-    fun navigate(url: String) {
-        val finalUrl = when {
-            url.startsWith("http://") || url.startsWith("https://") -> url
-            url.contains(".") && !url.contains(" ") -> "https://$url"
-            else -> "https://www.google.com/search?q=${url.replace(" ", "+")}"
+    private fun createNewTab() {
+        tabCount++
+        tabCountBadge.text = tabCount.toString()
+        viewPager.adapter?.notifyItemInserted(tabCount - 1)
+        viewPager.currentItem = tabCount - 1
+    }
+
+    private fun getActiveFragment(): BrowserFragment? {
+        val pos = viewPager.currentItem
+        return supportFragmentManager.findFragmentByTag("f$pos") as? BrowserFragment
+    }
+
+    private fun updateOmniboxForCurrentTab() {
+        getActiveFragment()?.let { fragment ->
+            omniboxView.setUrl(fragment.currentUrl)
+            omniboxView.setLoading(fragment.isLoading())
         }
-        showBrowser()
-        geckoSession?.loadUri(finalUrl)
     }
 
-    fun showHome() {
-        isHomeVisible = true
-        homeScreen?.visibility = View.VISIBLE
-        geckoView?.visibility = View.GONE
-        currentUrl = ""
+    private fun showTabManager() {
+        Toast.makeText(this, "$tabCount tab(s) open", Toast.LENGTH_SHORT).show()
     }
 
-    private fun showBrowser() {
-        isHomeVisible = false
-        homeScreen?.visibility = View.GONE
-        geckoView?.visibility = View.VISIBLE
+    private fun showMenu() {
+        val popup = PopupMenu(this, mainContainer)
+        popup.menu.add(0, 1, 0, "New Tab")
+        popup.menu.add(0, 2, 1, "Bookmarks")
+        popup.menu.add(0, 3, 2, "History")
+        popup.menu.add(0, 4, 3, "Settings")
+        popup.menu.add(0, 5, 4, "Desktop Site")
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                1 -> createNewTab()
+                2 -> Toast.makeText(this, "Bookmarks coming soon", Toast.LENGTH_SHORT).show()
+                3 -> Toast.makeText(this, "History coming soon", Toast.LENGTH_SHORT).show()
+                4 -> Toast.makeText(this, "Settings coming soon", Toast.LENGTH_SHORT).show()
+                5 -> getActiveFragment()?.toggleDesktopSite()
+            }
+            true
+        }
+        popup.show()
     }
 
-    fun goBack() {
-        geckoSession?.goBack(false)
+    override fun onBackPressed() {
+        val fragment = getActiveFragment()
+        if (fragment?.canGoBack() == true) {
+            fragment.goBack()
+        } else {
+            super.onBackPressed()
+        }
     }
 
-    fun goForward() {
-        geckoSession?.goForward(false)
-    }
-
-    fun toggleDesktopSite() {
-        isDesktopSite = !isDesktopSite
-        val ua = if (isDesktopSite)
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36"
-        else ""
-        geckoSession?.settings?.userAgentOverride = ua
-        if (currentUrl.isNotEmpty()) navigate(currentUrl)
-        Toast.makeText(
-            requireContext(),
-            if (isDesktopSite) "Desktop site" else "Mobile site",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
-
-    fun canGoBack(): Boolean = !isHomeVisible
-
-    fun isLoading(): Boolean = loading
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        geckoSession?.close()
-        geckoView?.releaseSession()
-        geckoView = null
-        geckoSession = null
+    private inner class BrowserAdapter(activity: AppCompatActivity) :
+        FragmentStateAdapter(activity) {
+        override fun getItemCount() = tabCount
+        override fun createFragment(position: Int) = BrowserFragment.newInstance(position)
+        override fun getItemId(position: Int) = position.toLong()
+        override fun containsItem(itemId: Long) = itemId < tabCount.toLong()
     }
 }
