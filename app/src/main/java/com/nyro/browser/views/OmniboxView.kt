@@ -9,7 +9,6 @@ import android.view.Gravity
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.*
-import androidx.core.content.ContextCompat
 
 class OmniboxView @JvmOverloads constructor(
     context: Context,
@@ -21,7 +20,6 @@ class OmniboxView @JvmOverloads constructor(
     private val secureIcon: TextView
     private val loadingBar: ProgressBar
     private var navigateListener: ((String) -> Unit)? = null
-    private var isSecure = false
 
     init {
         orientation = HORIZONTAL
@@ -29,7 +27,6 @@ class OmniboxView @JvmOverloads constructor(
         setPadding(12, 8, 12, 8)
         setBackgroundColor(Color.parseColor("#202124"))
 
-        // Pill-shaped container for the address bar
         val container = LinearLayout(context).apply {
             orientation = HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -41,10 +38,11 @@ class OmniboxView @JvmOverloads constructor(
             setPadding(24, 0, 24, 0)
         }
 
-        // Lock icon
         secureIcon = TextView(context).apply {
-            text = "🔒"
-            textSize = 13f
+            text = "https"
+            textSize = 11f
+            setTextColor(Color.parseColor("#9aa0a6"))
+            typeface = Typeface.DEFAULT
             gravity = Gravity.CENTER_VERTICAL
             layoutParams = LayoutParams(
                 LayoutParams.WRAP_CONTENT,
@@ -52,7 +50,6 @@ class OmniboxView @JvmOverloads constructor(
             ).also { it.marginEnd = 8 }
         }
 
-        // URL input
         urlEditText = EditText(context).apply {
             layoutParams = LayoutParams(0, LayoutParams.WRAP_CONTENT, 1f)
             inputType = android.text.InputType.TYPE_TEXT_VARIATION_URI
@@ -97,20 +94,14 @@ class OmniboxView @JvmOverloads constructor(
         container.addView(urlEditText)
         addView(container)
 
-        // Progress bar below omnibox
         loadingBar = ProgressBar(
             context, null,
             android.R.attr.progressBarStyleHorizontal
         ).apply {
-            layoutParams = LayoutParams(
-                LayoutParams.MATCH_PARENT, 6
-            )
+            layoutParams = LayoutParams(LayoutParams.MATCH_PARENT, 6)
             max = 100
             progress = 0
             visibility = GONE
-            progressDrawable = GradientDrawable().apply {
-                setColor(Color.parseColor("#4f8ef7"))
-            }
         }
     }
 
@@ -121,8 +112,12 @@ class OmniboxView @JvmOverloads constructor(
             urlEditText.setText(url)
             urlEditText.setSelection(0)
         }
-        isSecure = url.startsWith("https://")
-        secureIcon.text = if (isSecure) "🔒" else "🌐"
+        val isSecure = url.startsWith("https://")
+        secureIcon.text = if (isSecure) "https" else "http"
+        secureIcon.setTextColor(
+            if (isSecure) Color.parseColor("#81c995")
+            else Color.parseColor("#f28b82")
+        )
     }
 
     fun setLoading(isLoading: Boolean) {
